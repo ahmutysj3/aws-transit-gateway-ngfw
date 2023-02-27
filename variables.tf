@@ -15,5 +15,16 @@ variable "net_name" {
 
 variable "vpc_params" {
   description = "inputs for vpc's"
-  type = map
+  type = map(object({
+    cidr = string
+  }))
+}
+
+variable "subnet_params" {
+  description = "inputs for subnets"
+  type = map(object({
+    vpc = string
+    cidr_mask = number
+    private = bool
+  }))
 }

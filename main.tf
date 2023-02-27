@@ -38,15 +38,15 @@ resource "aws_vpc_ipam_pool" "vpc" {
 
 
 resource "aws_vpc_ipam_pool_cidr" "vpc" {
-  for_each = {for k,v in keys(var.vpc_params) : v => k}
+  for_each = var.vpc_params
   ipam_pool_id = aws_vpc_ipam_pool.vpc[each.key].id
-  cidr         = cidrsubnet(var.supernet,length(var.vpc_params),each.value)
+  cidr         = each.value.cidr
 }
 
 resource "aws_vpc" "trace" {
   for_each = var.vpc_params
   ipv4_ipam_pool_id   = aws_vpc_ipam_pool.vpc[each.key].id
-  ipv4_netmask_length = 22
+  #ipv4_netmask_length = 22
 
   tags = {
     Name = "${var.net_name}_${each.key}_vpc"
@@ -56,3 +56,5 @@ resource "aws_vpc" "trace" {
     aws_vpc_ipam_pool_cidr.vpc
   ]
 } 
+
+
