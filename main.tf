@@ -12,6 +12,7 @@ resource "aws_vpc" "hub" {
   cidr_block = each.value.cidr
   tags = {
     Name = "${var.net_name}_${each.key}_vpc"
+    type = each.value.type
   }
 }
 
@@ -22,6 +23,7 @@ resource "aws_vpc" "spokes" {
   cidr_block = each.value.cidr
   tags = {
     Name = "${var.net_name}_${each.key}_vpc"
+    type = each.value.type
   }
 }
 
@@ -31,6 +33,11 @@ resource "aws_subnet" "spokes" {
   cidr_block              = cidrsubnet(aws_vpc.spokes[each.value.vpc].cidr_block, each.value.cidr_mask - tonumber(element(split("/", aws_vpc.spokes[each.value.vpc].cidr_block), 1)), lookup({for k,v in keys({for k,v in var.subnet_params : k => v if v.vpc == each.value.vpc}) : v => k}, each.key))
   #cidr_block              = cidrsubnet(aws_vpc.spokes[each.value.vpc].cidr_block, each.value.cidr_mask - lookup(local.combined_vpc_mask, each.value.vpc),lookup(local.combined_net_num, each.key))
   map_public_ip_on_launch = each.value.public
+
+  tags = {
+    vpc = each.value.vpc
+    type = "spoke"
+  }
 }
 
 resource "aws_ec2_transit_gateway" "trace" {
@@ -48,8 +55,9 @@ resource "aws_ec2_transit_gateway" "trace" {
   }
 }
 
-/* resource "aws_ec2_transit_gateway_vpc_attachment" "trace" {
-  subnet_ids         = [aws_subnet.example.id]
-  transit_gateway_id = aws_ec2_transit_gateway.example.id
-  vpc_id             = aws_vpc.example.id
+/* resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
+  for_each =  { for k, v in aws_subnet.spokes : k => v.id if v.tags.vpc == "app" }
+  subnet_ids         = [aws_subnet.spokes["vault"].id]
+  transit_gateway_id = aws_ec2_transit_gateway.trace.id
+  vpc_id             = aws_vpc.spokes["app"].id
 } */
