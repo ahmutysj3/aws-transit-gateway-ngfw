@@ -44,10 +44,15 @@ resource "aws_vpc_ipam_pool_cidr" "vpc" {
 }
 
 resource "aws_vpc" "trace" {
-  depends_on = [
-    aws_vpc_ipam_pool_cidr.vpc
-  ]
   for_each = var.vpc_params
   ipv4_ipam_pool_id   = aws_vpc_ipam_pool.vpc[each.key].id
   ipv4_netmask_length = 22
+
+  tags = {
+    Name = "${var.net_name}_${each.key}_vpc"
+  }
+
+  depends_on = [
+    aws_vpc_ipam_pool_cidr.vpc
+  ]
 } 
