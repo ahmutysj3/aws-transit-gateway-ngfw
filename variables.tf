@@ -25,6 +25,6 @@ variable "subnet_params" {
   type = map(object({
     vpc = string
     cidr_mask = number
-    private = bool
+    public = bool
   }))
 }
