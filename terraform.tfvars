@@ -9,14 +9,21 @@ net_name = "trace"
 
 # add one key for each VPC and value can be either ipam or manual for cidr allocation
 vpc_params = {
+  hub = {
+    type = "hub"
+    cidr = "10.1.0.0/18"
+  }
   dmz = {
-    cidr = "10.1.0.0/19"
+    type = "spoke"
+    cidr = "10.1.64.0/18"
   }
   app = {
-    cidr = "10.1.32.0/19"
+    type = "spoke"
+    cidr = "10.1.128.0/18"
   }
   db = {
-    cidr = "10.1.64.0/19"
+    type = "spoke"
+    cidr = "10.1.192.0/18"
   }
 }
 
@@ -25,42 +32,42 @@ subnet_params = {
   vault = {
     #cidr = "10.1.32.0/24"
     cidr_mask = 24
-    public = true
-    vpc = "app"
+    public    = true
+    vpc       = "app"
   }
 
   hosting = {
     #cidr = "10.1.33.0/24"
     cidr_mask = 24
-    public = true
-    vpc = "app"
+    public    = true
+    vpc       = "app"
   }
 
   mysql = {
     #cidr = "10.1.64.0/24"
     cidr_mask = 24
-    public = true
-    vpc = "db"
+    public    = true
+    vpc       = "db"
   }
 
   consul = {
     #cidr = "10.1.65.0/24"
     cidr_mask = 24
-    public = true
-    vpc = "db"
+    public    = true
+    vpc       = "db"
   }
 
   nginx = {
     #cidr = "10.1.0.0/24"
     cidr_mask = 24
-    public = true
-    vpc = "dmz"
+    public    = true
+    vpc       = "dmz"
   }
 
   openvpn = {
     #cidr = "10.1.1.0/24"
     cidr_mask = 24
-    public = true
-    vpc = "dmz"
+    public    = true
+    vpc       = "dmz"
   }
 }

@@ -5,17 +5,18 @@ variable "region_aws" {
 
 variable "supernet" {
   description = "cidr for wan supernet"
-  type = string
+  type        = string
 }
 
 variable "net_name" {
   description = "prepended to all resource name tags"
-  type = string
+  type        = string
 }
 
 variable "vpc_params" {
   description = "inputs for vpc's"
   type = map(object({
+    type = string
     cidr = string
   }))
 }
@@ -23,8 +24,8 @@ variable "vpc_params" {
 variable "subnet_params" {
   description = "inputs for subnets"
   type = map(object({
-    vpc = string
+    vpc       = string
     cidr_mask = number
-    public = bool
+    public    = bool
   }))
 }
