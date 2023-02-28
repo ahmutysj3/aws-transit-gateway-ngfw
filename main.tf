@@ -47,7 +47,7 @@ resource "aws_subnet" "hub" {
 }
 
 locals {
-  hub_subnet_names = ["inside", "outside", "mgmt", "tg"]
+  hub_subnet_names = ["inside", "outside", "mgmt", "ha", "tg"]
 }
 
 resource "aws_subnet" "transit_gateway" {
