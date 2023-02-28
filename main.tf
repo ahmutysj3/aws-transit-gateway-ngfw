@@ -34,6 +34,22 @@ resource "aws_subnet" "spokes" {
   }
 }
 
+resource "aws_subnet" "hub" {
+  count = length(local.hub_subnet_names)
+  vpc_id = aws_vpc.hub["hub"].id
+  cidr_block = cidrsubnet(aws_vpc.hub["hub"].cidr_block,6,count.index)
+
+  tags = {
+    Name = element(local.hub_subnet_names,count.index)
+    type = "hub"
+    vpc = "hub"
+  } 
+}
+
+locals {
+  hub_subnet_names = ["inside", "outside", "mgmt", "tg"]
+}
+
 resource "aws_subnet" "transit_gateway" {
   for_each                = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   vpc_id                  = aws_vpc.spokes[each.key].id
@@ -94,3 +110,14 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
     Name = "${var.net_name}_tg_to_${each.key}_vpc_attach"
   }
 }
+/* 
+resource "aws_ec2_transit_gateway_vpc_attachment" "hub" {
+  for_each =  { for k, v in var.vpc_params : k => v if v.type == "hub" }
+  subnet_ids         = [aws_subnet.transit_gateway[each.key].id]
+  transit_gateway_id = aws_ec2_transit_gateway.trace.id
+  vpc_id             = aws_subnet.transit_gateway[each.key].vpc_id
+
+  tags = {
+    Name = "${var.net_name}_tg_to_${each.key}_vpc_attach"
+  }
+} */
