@@ -68,6 +68,10 @@ resource "aws_ec2_transit_gateway" "trace" {
   }
 }
 
+resource "aws_ec2_transit_gateway_route_table" "trace" {
+  transit_gateway_id = aws_ec2_transit_gateway.trace.id
+}
+
 resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
   for_each =  { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   subnet_ids         = [aws_subnet.transit_gateway[each.key].id]
