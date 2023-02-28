@@ -89,15 +89,15 @@ resource "aws_networkmanager_transit_gateway_registration" "trace" {
   transit_gateway_arn = aws_ec2_transit_gateway.trace.arn
 }
 
-resource "aws_ec2_transit_gateway_route_table" "trace" {
+resource "aws_ec2_transit_gateway_route_table" "spokes" {
   for_each = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   transit_gateway_id = aws_ec2_transit_gateway.trace.id
 }
 
-resource "aws_ec2_transit_gateway_route_table_association" "trace" {
+resource "aws_ec2_transit_gateway_route_table_association" "spokes" {
   for_each = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spokes[each.key].id
-  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.trace[each.key].id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
@@ -110,14 +110,26 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
     Name = "${var.net_name}_tg_to_${each.key}_vpc_attach"
   }
 }
-/* 
+
+resource "aws_ec2_transit_gateway_route_table" "hub" {
+  for_each = { for k, v in var.vpc_params : k => v if v.type == "hub" }
+  transit_gateway_id = aws_ec2_transit_gateway.trace.id
+}
+
+resource "aws_ec2_transit_gateway_route_table_association" "hub" {
+  for_each = { for k, v in var.vpc_params : k => v if v.type == "hub" }
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.hub[each.key].id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.hub[each.key].id
+}
+
 resource "aws_ec2_transit_gateway_vpc_attachment" "hub" {
   for_each =  { for k, v in var.vpc_params : k => v if v.type == "hub" }
-  subnet_ids         = [aws_subnet.transit_gateway[each.key].id]
+  subnet_ids         = [aws_subnet.hub[tonumber(lookup({for k, v in local.hub_subnet_names : v => k}, "tg"))].id]
   transit_gateway_id = aws_ec2_transit_gateway.trace.id
-  vpc_id             = aws_subnet.transit_gateway[each.key].vpc_id
+  vpc_id             = aws_vpc.hub[each.key].id
 
   tags = {
     Name = "${var.net_name}_tg_to_${each.key}_vpc_attach"
   }
-} */
+}
+
