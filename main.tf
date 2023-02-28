@@ -1,10 +1,3 @@
-resource "aws_networkmanager_global_network" "trace" {
-  description = "trace's aws wan/global network container"
-  tags = {
-    Name = "${var.net_name}_global_network"
-  }
-}
-
 resource "aws_vpc" "hub" {
   for_each = {
     for k, v in var.vpc_params : k => v if v.type == "hub"
@@ -68,8 +61,27 @@ resource "aws_ec2_transit_gateway" "trace" {
   }
 }
 
+resource "aws_networkmanager_global_network" "trace" {
+  description = "trace's aws wan/global network container"
+  tags = {
+    Name = "${var.net_name}_global_network"
+  }
+}
+
+resource "aws_networkmanager_transit_gateway_registration" "trace" {
+  global_network_id   = aws_networkmanager_global_network.trace.id
+  transit_gateway_arn = aws_ec2_transit_gateway.trace.arn
+}
+
 resource "aws_ec2_transit_gateway_route_table" "trace" {
+  for_each = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   transit_gateway_id = aws_ec2_transit_gateway.trace.id
+}
+
+resource "aws_ec2_transit_gateway_route_table_association" "trace" {
+  for_each = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spokes[each.key].id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.trace[each.key].id
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
