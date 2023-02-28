@@ -54,7 +54,7 @@ resource "aws_ec2_transit_gateway" "trace" {
   multicast_support               = "enable"
   vpn_ecmp_support                = "enable"
   auto_accept_shared_attachments  = "disable"
-  default_route_table_association = "enable"
+  default_route_table_association = "disable"
   default_route_table_propagation = "enable"
   tags = {
     Name = "${var.net_name}_transit_gateway"
