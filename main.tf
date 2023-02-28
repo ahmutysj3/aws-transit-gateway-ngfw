@@ -91,8 +91,12 @@ resource "aws_networkmanager_transit_gateway_registration" "trace" {
 }
 
 resource "aws_ec2_transit_gateway_route_table" "spokes" {
-  for_each           = local.spoke_vpcs
+  for_each           = aws_ec2_transit_gateway_vpc_attachment.spokes
   transit_gateway_id = aws_ec2_transit_gateway.trace.id
+
+  tags = {
+    "Name" = "${var.net_name}_${each.key}_tg_rt"
+  }
 }
 
 resource "aws_ec2_transit_gateway_route" "spoke_to_hub" {
@@ -103,7 +107,7 @@ resource "aws_ec2_transit_gateway_route" "spoke_to_hub" {
 }
 
 resource "aws_ec2_transit_gateway_route_table_association" "spokes" {
-  for_each                       = local.spoke_vpcs
+  for_each                       = aws_ec2_transit_gateway_vpc_attachment.spokes
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spokes[each.key].id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
 }
@@ -120,12 +124,23 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
 }
 
 resource "aws_ec2_transit_gateway_route_table" "hub" {
-  for_each           = local.hub_vpc
+  for_each           = aws_ec2_transit_gateway_vpc_attachment.hub
   transit_gateway_id = aws_ec2_transit_gateway.trace.id
+
+  tags = {
+    "Name" = "${var.net_name}_${each.key}_tg_rt"
+  }
+}
+
+resource "aws_ec2_transit_gateway_route" "hub_to_spokes" {
+  for_each                       = local.spoke_vpcs
+  destination_cidr_block         = each.value.cidr
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spokes[each.key].id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.hub["hub"].id
 }
 
 resource "aws_ec2_transit_gateway_route_table_association" "hub" {
-  for_each                       = local.hub_vpc
+  for_each                       = aws_ec2_transit_gateway_vpc_attachment.hub
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.hub[each.key].id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.hub[each.key].id
 }
