@@ -50,6 +50,7 @@ resource "aws_subnet" "hub" {
   count      = length(local.hub_subnet_names)
   vpc_id     = aws_vpc.hub["hub"].id
   cidr_block = cidrsubnet(aws_vpc.hub["hub"].cidr_block, 6, count.index)
+  map_public_ip_on_launch = count.index > 0 ? true : false 
 
   tags = {
     Name = element(local.hub_subnet_names, count.index)
@@ -81,15 +82,15 @@ resource "aws_route_table" "hub" {
   vpc_id = aws_vpc.hub["hub"].id
 
   tags = {
-    Name = "test_hub_rt_${count.index}"
+    Name = "${var.net_name}_hub_${element(local.hub_route_names,count.index)}_rt"
   }
 }
-
-/* resource "aws_route_table_association" "hub" {
-  for_each = var.subnet_params
-  subnet_id      = aws_subnet.hub[each.key].id
-  route_table_id = aws_route_table.hub[each.value.vpc].id
-} */
+#mgmt, outside, ha
+resource "aws_route_table_association" "hub_external" {
+  for_each = {for k,v in aws_subnet.hub : v.tags.Name  => v.id if length(regexall("(mgmt|outside|ha)","${v.tags.Name}")) == 1}
+  subnet_id      = each.value
+  route_table_id =  aws_route_table.hub[1].id
+}
 
 ##################################################################################
 //////////////////////// Subnet Route Tables /////////////////////////////////////
