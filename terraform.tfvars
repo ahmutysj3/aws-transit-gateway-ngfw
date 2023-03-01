@@ -9,7 +9,7 @@ net_name = "trace"
 
 # add one key for each VPC and value can be either ipam or manual for cidr allocation
 vpc_params = {
-  hub = {
+  sec = {
     type = "hub"
     cidr = "10.1.0.0/18"
   }
