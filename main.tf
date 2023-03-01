@@ -70,6 +70,23 @@ resource "aws_subnet" "transit_gateway" {
   }
 }
 
+##################################################################################
+//////////////////////// Transit Gateway & attachments ///////////////////////////
+##################################################################################
+
+resource "aws_route_table" "spokes" {
+  for_each = local.spoke_vpcs
+  vpc_id = aws_vpc.spokes[each.key].id
+
+  route {
+    cidr_block = "10.0.1.0/24"
+    transit_gateway_id = aws_ec2_transit_gateway.trace.id
+  }
+
+  tags = {
+    Name = "${var.net_name}_${each.key}_subnet_rt"
+  }
+}
 
 ##################################################################################
 //////////////////////// Transit Gateway & attachments ///////////////////////////
