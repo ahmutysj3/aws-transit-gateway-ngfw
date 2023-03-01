@@ -193,13 +193,12 @@ resource "aws_ec2_transit_gateway_route" "hub_to_spokes" {
 
 // ******  Route table associations ***** //
 resource "aws_ec2_transit_gateway_route_table_association" "spokes" {
-  for_each                       = aws_ec2_transit_gateway_vpc_attachment.spokes
+  for_each                       = local.spoke_vpcs
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spokes[each.key].id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
 }
 
 resource "aws_ec2_transit_gateway_route_table_association" "hub" {
-  for_each                       = aws_ec2_transit_gateway_vpc_attachment.hub
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.hub.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.hub.id
 }
