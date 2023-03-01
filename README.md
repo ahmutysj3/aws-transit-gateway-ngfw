@@ -27,6 +27,7 @@ Use of this module/s will require setting up **Terraform AWS Provider & AWS-CLI*
 - aws_subnet
 - aws_ec2_transit_gateway
 - aws_ec2_transit_gateway_route_table
+- aws_ec2_transit_gateway_route
 - aws_ec2_transit_gateway_route_table_association
 - aws_ec2_transit_gateway_vpc_attachment
 - aws_networkmanager_global_network

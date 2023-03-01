@@ -3,6 +3,10 @@ locals {
   hub_vpc    = { for k, v in var.vpc_params : k => v if v.type == "hub" }
 }
 
+##################################################################################
+//////////////////////////////// VPCs ////////////////////////////////////////////
+##################################################################################
+
 resource "aws_vpc" "hub" {
   for_each   = local.hub_vpc
   cidr_block = each.value.cidr
@@ -19,6 +23,13 @@ resource "aws_vpc" "spokes" {
     Name = "${var.net_name}_${each.key}_vpc"
     type = each.value.type
   }
+}
+
+##################################################################################
+//////////////////////////////// Subnets /////////////////////////////////////////
+##################################################################################
+locals {
+  hub_subnet_names = ["inside", "outside", "mgmt", "ha", "tg"]
 }
 
 resource "aws_subnet" "spokes" {
@@ -47,10 +58,6 @@ resource "aws_subnet" "hub" {
   }
 }
 
-locals {
-  hub_subnet_names = ["inside", "outside", "mgmt", "ha", "tg"]
-}
-
 resource "aws_subnet" "transit_gateway" {
   for_each   = local.spoke_vpcs
   vpc_id     = aws_vpc.spokes[each.key].id
@@ -63,6 +70,12 @@ resource "aws_subnet" "transit_gateway" {
   }
 }
 
+
+##################################################################################
+//////////////////////// Transit Gateway & attachments ///////////////////////////
+##################################################################################
+
+// ****** Transit Gateway ***** //
 resource "aws_ec2_transit_gateway" "trace" {
   description                     = "trace test transit gateway"
   transit_gateway_cidr_blocks     = [var.supernet]
@@ -78,48 +91,13 @@ resource "aws_ec2_transit_gateway" "trace" {
   }
 }
 
-resource "aws_networkmanager_global_network" "trace" {
-  description = "trace's aws wan/global network container"
-  tags = {
-    Name = "${var.net_name}_global_network"
-  }
-}
-
-resource "aws_networkmanager_transit_gateway_registration" "trace" {
-  global_network_id   = aws_networkmanager_global_network.trace.id
-  transit_gateway_arn = aws_ec2_transit_gateway.trace.arn
-}
-
+// ******  Route Tables ***** //
 resource "aws_ec2_transit_gateway_route_table" "spokes" {
   for_each           = aws_ec2_transit_gateway_vpc_attachment.spokes
   transit_gateway_id = aws_ec2_transit_gateway.trace.id
 
   tags = {
     "Name" = "${var.net_name}_${each.key}_tg_rt"
-  }
-}
-
-resource "aws_ec2_transit_gateway_route" "spoke_to_hub" {
-  for_each                       = local.spoke_vpcs
-  destination_cidr_block         = "0.0.0.0/0"
-  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.hub["hub"].id
-  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
-}
-
-resource "aws_ec2_transit_gateway_route_table_association" "spokes" {
-  for_each                       = aws_ec2_transit_gateway_vpc_attachment.spokes
-  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spokes[each.key].id
-  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
-}
-
-resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
-  for_each           = local.spoke_vpcs
-  subnet_ids         = [aws_subnet.transit_gateway[each.key].id]
-  transit_gateway_id = aws_ec2_transit_gateway.trace.id
-  vpc_id             = aws_subnet.transit_gateway[each.key].vpc_id
-
-  tags = {
-    Name = "${var.net_name}_tg_to_${each.key}_vpc_attach"
   }
 }
 
@@ -132,6 +110,14 @@ resource "aws_ec2_transit_gateway_route_table" "hub" {
   }
 }
 
+// ******  Routes ***** //
+resource "aws_ec2_transit_gateway_route" "spoke_to_hub" {
+  for_each                       = local.spoke_vpcs
+  destination_cidr_block         = "0.0.0.0/0"
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.hub["hub"].id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
+}
+
 resource "aws_ec2_transit_gateway_route" "hub_to_spokes" {
   for_each                       = local.spoke_vpcs
   destination_cidr_block         = each.value.cidr
@@ -139,10 +125,29 @@ resource "aws_ec2_transit_gateway_route" "hub_to_spokes" {
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.hub["hub"].id
 }
 
+// ******  Route table associations ***** //
+resource "aws_ec2_transit_gateway_route_table_association" "spokes" {
+  for_each                       = aws_ec2_transit_gateway_vpc_attachment.spokes
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spokes[each.key].id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
+}
+
 resource "aws_ec2_transit_gateway_route_table_association" "hub" {
   for_each                       = aws_ec2_transit_gateway_vpc_attachment.hub
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.hub[each.key].id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.hub[each.key].id
+}
+
+// ******  VPC Attachments ***** //
+resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
+  for_each           = local.spoke_vpcs
+  subnet_ids         = [aws_subnet.transit_gateway[each.key].id]
+  transit_gateway_id = aws_ec2_transit_gateway.trace.id
+  vpc_id             = aws_subnet.transit_gateway[each.key].vpc_id
+
+  tags = {
+    Name = "${var.net_name}_tg_to_${each.key}_vpc_attach"
+  }
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "hub" {
@@ -156,5 +161,15 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "hub" {
   }
 }
 
+// ******  Network Manager & TG Registration ***** //
+resource "aws_networkmanager_global_network" "trace" {
+  description = "trace's aws wan/global network container"
+  tags = {
+    Name = "${var.net_name}_global_network"
+  }
+}
 
-
+resource "aws_networkmanager_transit_gateway_registration" "trace" {
+  global_network_id   = aws_networkmanager_global_network.trace.id
+  transit_gateway_arn = aws_ec2_transit_gateway.trace.arn
+}
