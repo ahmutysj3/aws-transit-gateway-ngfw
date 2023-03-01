@@ -71,7 +71,28 @@ resource "aws_subnet" "transit_gateway" {
 }
 
 ##################################################################################
-//////////////////////// Transit Gateway & attachments ///////////////////////////
+//////////////////////// Hub Route Tables /////////////////////////////////////
+##################################################################################
+locals {
+  hub_route_names = ["internal","external"]
+}
+resource "aws_route_table" "hub" {
+  count = 2
+  vpc_id = aws_vpc.hub["hub"].id
+
+  tags = {
+    Name = "test_hub_rt_${count.index}"
+  }
+}
+
+/* resource "aws_route_table_association" "hub" {
+  for_each = var.subnet_params
+  subnet_id      = aws_subnet.hub[each.key].id
+  route_table_id = aws_route_table.hub[each.value.vpc].id
+} */
+
+##################################################################################
+//////////////////////// Subnet Route Tables /////////////////////////////////////
 ##################################################################################
 
 resource "aws_route_table" "spokes" {
@@ -86,6 +107,12 @@ resource "aws_route_table" "spokes" {
   tags = {
     Name = "${var.net_name}_${each.key}_subnet_rt"
   }
+}
+
+resource "aws_route_table_association" "spokes" {
+  for_each = var.subnet_params
+  subnet_id      = aws_subnet.spokes[each.key].id
+  route_table_id = aws_route_table.spokes[each.value.vpc].id
 }
 
 ##################################################################################
