@@ -1,15 +1,9 @@
-locals {
-  spoke_vpcs = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
-  hub_vpc    = { for k, v in var.vpc_params : k => v if v.type == "hub" }
-  hub_cidr = element([for k, v in var.vpc_params : v.cidr if v.type == "hub"],0)
-}
-
 ##################################################################################
 //////////////////////////////// VPCs ////////////////////////////////////////////
 ##################################################################################
 
 resource "aws_vpc" "hub" {
-  cidr_block = local.hub_cidr
+  cidr_block = element([for k, v in var.vpc_params : v.cidr if v.type == "hub"],0)
   tags = {
     Name = "${var.net_name}_hub_vpc"
     type = "hub"
@@ -17,7 +11,7 @@ resource "aws_vpc" "hub" {
 }
 
 resource "aws_vpc" "spokes" {
-  for_each   = local.spoke_vpcs
+  for_each   = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   cidr_block = each.value.cidr
   tags = {
     Name = "${var.net_name}_${each.key}_vpc"
@@ -68,7 +62,7 @@ resource "aws_subnet" "hub" {
 }
 
 resource "aws_subnet" "transit_gateway" {
-  for_each   = local.spoke_vpcs
+  for_each   = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   vpc_id     = aws_vpc.spokes[each.key].id
   cidr_block = cidrsubnet(aws_vpc.spokes[each.key].cidr_block, tonumber(element(split("/", element(values({ for k, v in aws_subnet.spokes : k => v.cidr_block if v.tags.vpc == each.key }), 0)), 1)) - tonumber(element(split("/", aws_vpc.spokes[each.key].cidr_block), 1)), length({ for k, v in aws_subnet.spokes : k => v if v.tags.vpc == each.key }))
 
@@ -119,7 +113,7 @@ resource "aws_route_table_association" "external" {
 ##################################################################################
 
 resource "aws_route_table" "spokes" {
-  for_each = local.spoke_vpcs
+  for_each = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   vpc_id = aws_vpc.spokes[each.key].id
 
   route {
@@ -178,14 +172,14 @@ resource "aws_ec2_transit_gateway_route_table" "hub" {
 
 // ******  Routes ***** //
 resource "aws_ec2_transit_gateway_route" "spoke_to_hub" {
-  for_each                       = local.spoke_vpcs
+  for_each                       = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   destination_cidr_block         = "0.0.0.0/0"
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.hub.id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
 }
 
 resource "aws_ec2_transit_gateway_route" "hub_to_spokes" {
-  for_each                       = local.spoke_vpcs
+  for_each                       = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   destination_cidr_block         = each.value.cidr
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spokes[each.key].id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.hub.id
@@ -193,7 +187,7 @@ resource "aws_ec2_transit_gateway_route" "hub_to_spokes" {
 
 // ******  Route table associations ***** //
 resource "aws_ec2_transit_gateway_route_table_association" "spokes" {
-  for_each                       = local.spoke_vpcs
+  for_each                       = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spokes[each.key].id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
 }
@@ -205,7 +199,7 @@ resource "aws_ec2_transit_gateway_route_table_association" "hub" {
 
 // ******  VPC Attachments ***** //
 resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
-  for_each           = local.spoke_vpcs
+  for_each           = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   subnet_ids         = [aws_subnet.transit_gateway[each.key].id]
   transit_gateway_id = aws_ec2_transit_gateway.trace.id
   vpc_id             = aws_subnet.transit_gateway[each.key].vpc_id
