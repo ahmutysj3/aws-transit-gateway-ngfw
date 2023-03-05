@@ -76,22 +76,13 @@ resource "aws_subnet" "transit_gateway" {
 ##################################################################################
 //////////////////////// Hub Route Tables /////////////////////////////////////
 ##################################################################################
-locals {
-  hub_routes = {
-    "internal" = {
-      vpc = "hub", 
-    },
-    "external" = {
-      vpc = "hub"
-    }
-  }
-}
+
 resource "aws_route_table" "hub" {
-  for_each = local.hub_routes
+  for_each = toset(["internal",external])
   vpc_id = aws_vpc.hub.id
 
   tags = {
-    Name = "${var.net_name}_${each.value.vpc}_${each.key}_rt"
+    Name = "${var.net_name}_hub_${each.key}_rt"
   }
 }
 
