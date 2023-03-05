@@ -99,6 +99,18 @@ resource "aws_route_table_association" "external" {
   route_table_id = aws_route_table.hub["external"].id
 }
 
+resource "aws_route" "route_to_tg" {
+  route_table_id              = aws_route_table.hub["internal"].id
+  destination_cidr_block = "0.0.0.0/0"
+  transit_gateway_id      = aws_ec2_transit_gateway.trace.id
+}
+
+resource "aws_route" "route_to_internet" {
+  route_table_id              = aws_route_table.hub["external"].id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id      = aws_internet_gateway.hub.id
+}
+
 ##################################################################################
 //////////////////////// Subnet Route Tables /////////////////////////////////////
 ##################################################################################
