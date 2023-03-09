@@ -206,6 +206,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
   subnet_ids         = [aws_subnet.transit_gateway[each.key].id]
   transit_gateway_id = aws_ec2_transit_gateway.trace.id
   vpc_id             = aws_subnet.transit_gateway[each.key].vpc_id
+  transit_gateway_default_route_table_association = false
 
   tags = {
     Name = "${var.net_name}_tg_to_${each.key}_vpc_attach"
@@ -216,6 +217,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "hub" {
   subnet_ids         = [aws_subnet.hub[tonumber(lookup({ for k, v in local.hub_subnet_names : v => k }, "tg"))].id]
   transit_gateway_id = aws_ec2_transit_gateway.trace.id
   vpc_id             = aws_vpc.hub.id
+  transit_gateway_default_route_table_association = false
 
   tags = {
     Name = "${var.net_name}_tg_to_hub_vpc_attach"
