@@ -142,7 +142,7 @@ resource "aws_route_table_association" "spokes" {
 // ****** Transit Gateway ***** //
 resource "aws_ec2_transit_gateway" "trace" {
   description                     = "trace test transit gateway"
-  transit_gateway_cidr_blocks     = [var.supernet]
+  transit_gateway_cidr_blocks     = [for sub in aws_subnet.hub :  sub.cidr_block if sub.tags.Name == "tg"]
   amazon_side_asn                 = 64512
   dns_support                     = "enable"
   multicast_support               = "enable"
