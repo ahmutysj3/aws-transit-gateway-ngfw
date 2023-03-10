@@ -32,3 +32,7 @@ Use of this module/s will require setting up **Terraform AWS Provider & AWS-CLI*
 - aws_ec2_transit_gateway_vpc_attachment
 - aws_networkmanager_global_network
 - aws_networkmanager_transit_gateway_registration
+
+## Notes
+
+- Adding more than 1 x "hub" type VPC will *break* the module!

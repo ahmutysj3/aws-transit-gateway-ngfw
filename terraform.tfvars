@@ -30,7 +30,7 @@ vpc_params = {
 # add one key for each subnet and specify the key from vpc_params to assign to that vpc
 # a default transit gateway subnet will be given its own subnet and that subnet cidr will follow conseq. w/ the last subnet in that vpc
 subnet_params = {
-  vault = { 
+  vault = {
     cidr_mask = 24
     public    = true
     vpc       = "app"
