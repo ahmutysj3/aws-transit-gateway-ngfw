@@ -40,7 +40,7 @@ resource "aws_subnet" "hub" {
   map_public_ip_on_launch = each.value > 0 ? true : false
 
   tags = {
-    Name = "${var.net_name}_${each.key}_subnet"
+    Name = "${var.net_name}_${join("", [for k, v in var.vpc_params : k if v.type == "hub"])}_${each.key}_subnet"
     type = "hub"
     vpc  = join("", [for k, v in var.vpc_params : k if v.type == "hub"])
   }
@@ -53,7 +53,7 @@ resource "aws_subnet" "spokes" {
   map_public_ip_on_launch = each.value.public
 
   tags = {
-    Name = "${var.net_name}_${each.key}_subnet"
+    Name = "${var.net_name}_${each.value.vpc}_${each.key}_subnet"
     vpc  = each.value.vpc
     type = "spoke"
   }
@@ -149,7 +149,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "hub" {
-  subnet_ids                                      = [lookup({ for k, v in aws_subnet.hub : k => v.id if length(regexall("${var.net_name}_tg_subnet", v.tags.Name)) > 0 }, "tg")]
+  subnet_ids                                      = [lookup({ for k, v in aws_subnet.hub : k => v.id if length(regexall("${var.net_name}_${join("", [for k, v in var.vpc_params : k if v.type == "hub"])}_tg_subnet", v.tags.Name)) > 0 }, "tg")]
   transit_gateway_id                              = aws_ec2_transit_gateway.trace.id
   vpc_id                                          = join("", [for v in aws_vpc.main : v.id if v.tags.type == "hub"])
   transit_gateway_default_route_table_association = false
