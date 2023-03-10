@@ -1,21 +1,20 @@
 output "subnets" {
-  value = { for k, v in aws_subnet.spokes :
-    v.tags.Name => {
-      cidr : v.cidr_block,
-      id : v.id,
-      vpc : v.tags.vpc
+  value = merge(
+    { for k, v in aws_subnet.spokes :
+      v.tags.Name => {
+        cidr : v.cidr_block,
+        id : v.id,
+        vpc : v.tags.vpc
+      }
+    },
+    { for k, v in aws_subnet.hub :
+      v.tags.Name => {
+        cidr : v.cidr_block,
+        id : v.id,
+        vpc : v.tags.vpc
+      }
     }
-  }
-}
-
-output "hub_subnets" {
-  value = { for k, v in aws_subnet.hub :
-    v.tags.Name => {
-      cidr : v.cidr_block,
-      id : v.id,
-      vpc : v.tags.vpc
-    }
-  }
+  )
 }
 
 output "vpcs" {
