@@ -1,4 +1,4 @@
-output "subnets" {
+/* output "subnets" {
   value = { for k, v in aws_subnet.spokes :
     v.tags.Name =>
     {
@@ -7,4 +7,4 @@ output "subnets" {
       vpc : v.tags.vpc
     }
   }
-}
+} */
