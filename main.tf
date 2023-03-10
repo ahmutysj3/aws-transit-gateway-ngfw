@@ -235,11 +235,17 @@ resource "aws_route" "route_to_internet" {
   gateway_id             = aws_internet_gateway.hub.id
 }
 
-resource "aws_route" "tg_subnet" {
+resource "aws_route" "route_to_tg_subnet" {
+  for_each = aws_subnet.transit_gateway
   route_table_id         = aws_route_table.hub["external"].id
-  destination_cidr_block = join("",[for k in aws_subnet.hub : k.cidr_block if k.tags.purpose == "tg"])
+  destination_cidr_block = each.value.cidr_block
   transit_gateway_id     = aws_ec2_transit_gateway.trace.id
 }
+
+
+##################################################################################
+////////////////////////   Security Groups  /////////////////////////////////////
+##################################################################################
 
 resource "aws_security_group" "spokes" {
   for_each = var.vpc_params
@@ -249,4 +255,13 @@ resource "aws_security_group" "spokes" {
   tags = {
     Name = "${var.net_name}_nsg"
   }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "dmz" {
+  security_group_id = aws_security_group.spokes["dmz"].id
+
+  cidr_ipv4   = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "app"])
+  from_port   = 0
+  ip_protocol = "-1"
+  to_port     = 65535
 }

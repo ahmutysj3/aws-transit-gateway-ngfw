@@ -41,3 +41,5 @@ Use of this module/s will require setting up **Terraform AWS Provider & AWS-CLI*
 ## Notes
 
 - Adding more than 1 x "hub" type VPC will *break* the module!
+- the keys for the spoke VPCs in var.vpc_params CANNOT be changed. 
+    - The names are used for security groups later in the module
