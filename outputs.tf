@@ -8,6 +8,16 @@ output "subnets" {
   }
 }
 
+output "hub_subnets" {
+  value = { for k, v in aws_subnet.hub :
+    v.tags.Name => {
+      cidr : v.cidr_block,
+      id : v.id,
+      vpc : v.tags.vpc
+    }
+  }
+}
+
 output "vpcs" {
   value = { for k, v in aws_vpc.main :
     v.tags.Name => {

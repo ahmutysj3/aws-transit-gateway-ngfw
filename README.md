@@ -17,6 +17,7 @@ Use of this module/s will require setting up **Terraform AWS Provider & AWS-CLI*
 ### Hub-Spoke Design utilizing Transit Gateway
 
 - `Hub` Virtual Private Cloud
+    > security vpc where network virtual appliance will sit
 - `DMZ` Virtual Private Cloud
 - `App` Virtual Private Cloud
 - `DB` Virtual Private Cloud
