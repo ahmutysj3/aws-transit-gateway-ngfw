@@ -160,7 +160,7 @@ resource "aws_ec2_transit_gateway_route_table" "spokes" {
   transit_gateway_id = aws_ec2_transit_gateway.trace.id
 
   tags = {
-    "Name" = "${var.net_name}_${each.key}_tg_rt"
+    Name = "${var.net_name}_${each.key}_tg_rt"
   }
 }
 
@@ -168,7 +168,7 @@ resource "aws_ec2_transit_gateway_route_table" "hub" {
   transit_gateway_id = aws_ec2_transit_gateway.trace.id
 
   tags = {
-    "Name" = "${var.net_name}_hub_tg_rt"
+    Name = "${var.net_name}_hub_tg_rt"
   }
 }
 

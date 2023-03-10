@@ -30,49 +30,44 @@ vpc_params = {
 # add one key for each subnet and specify the key from vpc_params to assign to that vpc
 # a default transit gateway subnet will be given its own subnet and that subnet cidr will follow conseq. w/ the last subnet in that vpc
 subnet_params = {
-  vault = {
-    #cidr = "10.1.32.0/24"
+  vault = { 
     cidr_mask = 24
     public    = true
     vpc       = "app"
   }
 
   hosting = {
-    #cidr = "10.1.33.0/24"
     cidr_mask = 24
     public    = true
     vpc       = "app"
   }
 
   mysql = {
-    #cidr = "10.1.64.0/24"
     cidr_mask = 24
     public    = true
     vpc       = "db"
   }
 
   consul = {
-    #cidr = "10.1.65.0/24"
     cidr_mask = 24
     public    = true
     vpc       = "db"
   }
 
   nginx = {
-    #cidr = "10.1.0.0/24"
     cidr_mask = 24
     public    = true
     vpc       = "dmz"
   }
 
   openvpn = {
-    #cidr = "10.1.1.0/24"
     cidr_mask = 24
     public    = true
     vpc       = "dmz"
   }
 }
 
+# inputs for settings parameters of the transit gateway
 tg_params = {
   tg_name                         = "trace_main_tg"
   amazon_side_asn                 = 64512
