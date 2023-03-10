@@ -8,6 +8,7 @@ resource "aws_vpc" "main" {
   tags = {
     Name = "${var.net_name}_${each.key}_vpc"
     type = each.value.type
+    vpc = each.key
   }
 }
 
