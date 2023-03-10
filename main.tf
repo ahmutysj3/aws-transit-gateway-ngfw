@@ -194,3 +194,41 @@ resource "aws_route_table_association" "spokes" {
   subnet_id      = aws_subnet.spokes[each.key].id
   route_table_id = aws_route_table.spokes[each.value.vpc].id
 }
+
+##################################################################################
+//////////////////////// Hub Route Tables /////////////////////////////////////
+##################################################################################
+
+resource "aws_route_table" "hub" {
+  for_each = toset(["internal", "external"])
+  vpc_id   = join("", [for v in aws_vpc.main : v.id if v.tags.type == "hub"])
+
+  tags = {
+    Name = "${var.net_name}_hub_${each.key}_rt"
+  }
+}
+
+resource "aws_route_table_association" "internal" {
+  for_each       = { for k, v in aws_subnet.hub : v.tags.Name => v if v.tags.Name == "inside" }
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.hub["internal"].id
+}
+
+#mgmt, outside, ha
+resource "aws_route_table_association" "external" {
+  for_each       = { for k, v in aws_subnet.hub : v.tags.Name => v if v.tags.Name != "inside" && v.tags.Name != "tg" }
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.hub["external"].id
+}
+
+resource "aws_route" "route_to_tg" {
+  route_table_id         = aws_route_table.hub["internal"].id
+  destination_cidr_block = "0.0.0.0/0"
+  transit_gateway_id     = aws_ec2_transit_gateway.trace.id
+}
+
+resource "aws_route" "route_to_internet" {
+  route_table_id         = aws_route_table.hub["external"].id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.hub.id
+}
