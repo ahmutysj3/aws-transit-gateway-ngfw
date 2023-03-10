@@ -72,3 +72,14 @@ subnet_params = {
     vpc       = "dmz"
   }
 }
+
+tg_params = {
+  tg_name                         = "trace_main_tg"
+  amazon_side_asn                 = 64512
+  auto_accept_shared_attachments  = false
+  default_route_table_association = false
+  default_route_table_propagation = true
+  enable_dns_support              = true
+  enable_multicast_support        = true
+  enable_vpn_ecmp_support         = false
+}

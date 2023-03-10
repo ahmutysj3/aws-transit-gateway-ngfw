@@ -3,7 +3,7 @@
 ##################################################################################
 
 resource "aws_vpc" "hub" {
-  cidr_block = element([for k, v in var.vpc_params : v.cidr if v.type == "hub"],0)
+  cidr_block = element([for k, v in var.vpc_params : v.cidr if v.type == "hub"], 0)
   tags = {
     Name = "${var.net_name}_hub_vpc"
     type = "hub"
@@ -49,10 +49,10 @@ resource "aws_subnet" "spokes" {
 }
 
 resource "aws_subnet" "hub" {
-  count      = length(local.hub_subnet_names)
-  vpc_id     = aws_vpc.hub.id
-  cidr_block = cidrsubnet(aws_vpc.hub.cidr_block, 6, count.index)
-  map_public_ip_on_launch = count.index > 0 ? true : false 
+  count                   = length(local.hub_subnet_names)
+  vpc_id                  = aws_vpc.hub.id
+  cidr_block              = cidrsubnet(aws_vpc.hub.cidr_block, 6, count.index)
+  map_public_ip_on_launch = count.index > 0 ? true : false
 
   tags = {
     Name = element(local.hub_subnet_names, count.index)
@@ -78,8 +78,8 @@ resource "aws_subnet" "transit_gateway" {
 ##################################################################################
 
 resource "aws_route_table" "hub" {
-  for_each = toset(["internal","external"])
-  vpc_id = aws_vpc.hub.id
+  for_each = toset(["internal", "external"])
+  vpc_id   = aws_vpc.hub.id
 
   tags = {
     Name = "${var.net_name}_hub_${each.key}_rt"
@@ -87,28 +87,28 @@ resource "aws_route_table" "hub" {
 }
 
 resource "aws_route_table_association" "internal" {
-  for_each = {for k,v in aws_subnet.hub : v.tags.Name  => v if v.tags.Name == "inside"}
+  for_each       = { for k, v in aws_subnet.hub : v.tags.Name => v if v.tags.Name == "inside" }
   subnet_id      = each.value.id
   route_table_id = aws_route_table.hub["internal"].id
 }
 
 #mgmt, outside, ha
 resource "aws_route_table_association" "external" {
-  for_each = {for k,v in aws_subnet.hub : v.tags.Name  => v if v.tags.Name != "inside" && v.tags.Name != "tg"}
+  for_each       = { for k, v in aws_subnet.hub : v.tags.Name => v if v.tags.Name != "inside" && v.tags.Name != "tg" }
   subnet_id      = each.value.id
   route_table_id = aws_route_table.hub["external"].id
 }
 
 resource "aws_route" "route_to_tg" {
-  route_table_id              = aws_route_table.hub["internal"].id
+  route_table_id         = aws_route_table.hub["internal"].id
   destination_cidr_block = "0.0.0.0/0"
-  transit_gateway_id      = aws_ec2_transit_gateway.trace.id
+  transit_gateway_id     = aws_ec2_transit_gateway.trace.id
 }
 
 resource "aws_route" "route_to_internet" {
-  route_table_id              = aws_route_table.hub["external"].id
+  route_table_id         = aws_route_table.hub["external"].id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id      = aws_internet_gateway.hub.id
+  gateway_id             = aws_internet_gateway.hub.id
 }
 
 ##################################################################################
@@ -117,10 +117,10 @@ resource "aws_route" "route_to_internet" {
 
 resource "aws_route_table" "spokes" {
   for_each = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
-  vpc_id = aws_vpc.spokes[each.key].id
+  vpc_id   = aws_vpc.spokes[each.key].id
 
   route {
-    cidr_block = "0.0.0.0/0"
+    cidr_block         = "0.0.0.0/0"
     transit_gateway_id = aws_ec2_transit_gateway.trace.id
   }
 
@@ -130,7 +130,7 @@ resource "aws_route_table" "spokes" {
 }
 
 resource "aws_route_table_association" "spokes" {
-  for_each = var.subnet_params
+  for_each       = var.subnet_params
   subnet_id      = aws_subnet.spokes[each.key].id
   route_table_id = aws_route_table.spokes[each.value.vpc].id
 }
@@ -141,17 +141,16 @@ resource "aws_route_table_association" "spokes" {
 
 // ****** Transit Gateway ***** //
 resource "aws_ec2_transit_gateway" "trace" {
-  description                     = "trace test transit gateway"
-  transit_gateway_cidr_blocks     = [for sub in aws_subnet.hub :  sub.cidr_block if sub.tags.Name == "tg"]
-  amazon_side_asn                 = 64512
-  dns_support                     = "enable"
-  multicast_support               = "enable"
-  vpn_ecmp_support                = "enable"
-  auto_accept_shared_attachments  = "disable"
-  default_route_table_association = "disable"
-  default_route_table_propagation = "enable"
+  transit_gateway_cidr_blocks     = [for sub in aws_subnet.hub : sub.cidr_block if sub.tags.Name == "tg"]
+  amazon_side_asn                 = var.tg_params.amazon_side_asn == null ? 64512 : var.tg_params.amazon_side_asn
+  dns_support                     = var.tg_params.enable_dns_support == true ? "enable" : "disable"
+  multicast_support               = var.tg_params.enable_multicast_support == true ? "enable" : "disable"
+  vpn_ecmp_support                = var.tg_params.enable_vpn_ecmp_support == true ? "enable" : "disable"
+  auto_accept_shared_attachments  = var.tg_params.auto_accept_shared_attachments == true ? "enable" : "disable"
+  default_route_table_association = var.tg_params.default_route_table_association == true ? "enable" : "disable"
+  default_route_table_propagation = var.tg_params.default_route_table_propagation == true ? "enable" : "disable"
   tags = {
-    Name = "${var.net_name}_transit_gateway"
+    Name = var.tg_params.tg_name
   }
 }
 
@@ -202,10 +201,10 @@ resource "aws_ec2_transit_gateway_route_table_association" "hub" {
 
 // ******  VPC Attachments ***** //
 resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
-  for_each           = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
-  subnet_ids         = [aws_subnet.transit_gateway[each.key].id]
-  transit_gateway_id = aws_ec2_transit_gateway.trace.id
-  vpc_id             = aws_subnet.transit_gateway[each.key].vpc_id
+  for_each                                        = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
+  subnet_ids                                      = [aws_subnet.transit_gateway[each.key].id]
+  transit_gateway_id                              = aws_ec2_transit_gateway.trace.id
+  vpc_id                                          = aws_subnet.transit_gateway[each.key].vpc_id
   transit_gateway_default_route_table_association = false
 
   tags = {
@@ -214,9 +213,9 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "hub" {
-  subnet_ids         = [aws_subnet.hub[tonumber(lookup({ for k, v in local.hub_subnet_names : v => k }, "tg"))].id]
-  transit_gateway_id = aws_ec2_transit_gateway.trace.id
-  vpc_id             = aws_vpc.hub.id
+  subnet_ids                                      = [aws_subnet.hub[tonumber(lookup({ for k, v in local.hub_subnet_names : v => k }, "tg"))].id]
+  transit_gateway_id                              = aws_ec2_transit_gateway.trace.id
+  vpc_id                                          = aws_vpc.hub.id
   transit_gateway_default_route_table_association = false
 
   tags = {
