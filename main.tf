@@ -43,6 +43,7 @@ resource "aws_subnet" "hub" {
     Name = "${var.net_name}_${join("", [for k, v in var.vpc_params : k if v.type == "hub"])}_${each.key}_subnet"
     type = "hub"
     vpc  = join("", [for k, v in var.vpc_params : k if v.type == "hub"])
+    purpose = each.key
   }
 }
 
@@ -232,4 +233,20 @@ resource "aws_route" "route_to_internet" {
   route_table_id         = aws_route_table.hub["external"].id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.hub.id
+}
+
+resource "aws_route" "tg_subnet" {
+  route_table_id         = aws_route_table.hub["external"].id
+  destination_cidr_block = join("",[for k in aws_subnet.hub : k.cidr_block if k.tags.purpose == "tg"])
+  transit_gateway_id     = aws_ec2_transit_gateway.trace.id
+}
+
+resource "aws_security_group" "spokes" {
+  for_each = var.vpc_params
+  name        = "${var.net_name}_nsg"
+  vpc_id      = aws_vpc.main[each.key].id
+
+  tags = {
+    Name = "${var.net_name}_nsg"
+  }
 }
