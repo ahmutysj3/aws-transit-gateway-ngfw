@@ -9,12 +9,12 @@ output "subnets" {
 }
 
 output "vpcs" {
-  value = { for k, v in aws_vpc.main : 
-    v.tags.Name => { 
-      id : v.id, 
-      cidr : v.cidr_block, 
+  value = { for k, v in aws_vpc.main :
+    v.tags.Name => {
+      id : v.id,
+      cidr : v.cidr_block,
       sec_grp : v.tags.vpc
-      type : v.tags.type 
-    } 
+      type : v.tags.type
+    }
   }
 }

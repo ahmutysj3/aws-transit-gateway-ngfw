@@ -25,6 +25,10 @@ Use of this module/s will require setting up **Terraform AWS Provider & AWS-CLI*
 
 - aws_vpc
 - aws_subnet
+- aws_route_table
+- aws_route_table_association
+- aws_route
+- aws_internet_gateway
 - aws_ec2_transit_gateway
 - aws_ec2_transit_gateway_route_table
 - aws_ec2_transit_gateway_route
