@@ -33,7 +33,7 @@ locals {
 }
 
 resource "aws_subnet" "hub" {
-  for_each = local.hub_subnet_names
+  for_each                = local.hub_subnet_names
   vpc_id                  = join("", [for v in aws_vpc.main : v.id if v.tags.type == "hub"])
   cidr_block              = cidrsubnet(aws_vpc.main[join("", [for k, v in var.vpc_params : k if v.type == "hub"])].cidr_block, 6, each.value)
   map_public_ip_on_launch = each.value > 0 ? true : false
@@ -46,9 +46,9 @@ resource "aws_subnet" "hub" {
 }
 
 resource "aws_subnet" "spokes" {
-  for_each   = var.subnet_params
-  vpc_id     = aws_vpc.main[each.value.vpc].id
-  cidr_block = cidrsubnet(aws_vpc.main[each.value.vpc].cidr_block, each.value.cidr_mask - tonumber(element(split("/", aws_vpc.main[each.value.vpc].cidr_block), 1)), lookup({ for k, v in keys({ for k, v in var.subnet_params : k => v if v.vpc == each.value.vpc }) : v => k }, each.key))
+  for_each                = var.subnet_params
+  vpc_id                  = aws_vpc.main[each.value.vpc].id
+  cidr_block              = cidrsubnet(aws_vpc.main[each.value.vpc].cidr_block, each.value.cidr_mask - tonumber(element(split("/", aws_vpc.main[each.value.vpc].cidr_block), 1)), lookup({ for k, v in keys({ for k, v in var.subnet_params : k => v if v.vpc == each.value.vpc }) : v => k }, each.key))
   map_public_ip_on_launch = each.value.public
 
   tags = {
@@ -148,7 +148,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "hub" {
-  subnet_ids                                      = [lookup({for k,v in aws_subnet.hub : k => v.id if length(regexall("${var.net_name}_tg_subnet",v.tags.Name)) > 0},"tg")]
+  subnet_ids                                      = [lookup({ for k, v in aws_subnet.hub : k => v.id if length(regexall("${var.net_name}_tg_subnet", v.tags.Name)) > 0 }, "tg")]
   transit_gateway_id                              = aws_ec2_transit_gateway.trace.id
   vpc_id                                          = join("", [for v in aws_vpc.main : v.id if v.tags.type == "hub"])
   transit_gateway_default_route_table_association = false

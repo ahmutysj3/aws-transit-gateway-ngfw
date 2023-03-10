@@ -12,7 +12,6 @@ terraform {
     bucket = "trace-tf-unlocked-bucket"
     key    = "main/transit-gateway/terraform.tfstate"
     region = "us-east-1"
-    #dynamodb_table = "terraform_state"
   }
 }
 
