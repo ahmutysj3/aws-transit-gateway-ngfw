@@ -11,7 +11,8 @@ output "subnets" {
       v.tags.Name => {
         cidr : v.cidr_block,
         id : v.id,
-        vpc : v.tags.vpc
+        vpc : v.tags.vpc,
+        purpose : v.tags.purpose
       }
     }
   )
