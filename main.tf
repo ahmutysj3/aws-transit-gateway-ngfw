@@ -259,18 +259,13 @@ resource "aws_security_group" "spokes" {
 
 resource "aws_vpc_security_group_ingress_rule" "hub_traffic" {
   for_each = aws_security_group.spokes
-  security_group_id = aws_security_group.spokes[each.key].prefix_list_id
+  security_group_id = aws_security_group.spokes[each.key].id
   cidr_ipv4 = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.type == "hub"])
-  from_port   = 0
   ip_protocol = "-1"
-  to_port     = 65535
 }
 
 resource "aws_vpc_security_group_ingress_rule" "dmz" {
   security_group_id = aws_security_group.spokes["dmz"].id
-
   cidr_ipv4   = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "app"])
-  from_port   = 0
   ip_protocol = "-1"
-  to_port     = 65535
 }
