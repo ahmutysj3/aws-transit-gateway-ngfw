@@ -44,13 +44,13 @@ subnet_params = {
 
   mysql = {
     cidr_mask = 24
-    public    = true
+    public    = false
     vpc       = "db"
   }
 
   consul = {
     cidr_mask = 24
-    public    = true
+    public    = false
     vpc       = "db"
   }
 
