@@ -277,12 +277,6 @@ resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_db" {
   cidr_ipv4 = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.type == "dmz"])
   ip_protocol = "-1"
 }
-/* resource "aws_vpc_security_group_ingress_rule" "allow_inbound_from_hub" {
-  for_each = {for k, v in var.vpc_params : k => v if v.type == "spoke"}
-  security_group_id = aws_security_group.spokes[each.key].id
-  cidr_ipv4 = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.type == "hub"])
-  ip_protocol = "-1"
-} */
 
 resource "aws_vpc_security_group_ingress_rule" "allow_inbound_from_dmz" {
   for_each = {for k, v in var.vpc_params : k => v if k == "app"}
