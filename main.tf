@@ -78,7 +78,7 @@ resource "aws_subnet" "transit_gateway" {
 
 // ****** Transit Gateway ***** //
 resource "aws_ec2_transit_gateway" "trace" {
-  transit_gateway_cidr_blocks     = [for sub in aws_subnet.hub : sub.cidr_block if sub.tags.Name == "${var.net_name}_tg_subnet"]
+  transit_gateway_cidr_blocks     = [for sub in aws_subnet.hub : sub.cidr_block if sub.tags.purpose == "tg"]
   amazon_side_asn                 = var.tg_params.amazon_side_asn == null ? 64512 : var.tg_params.amazon_side_asn
   dns_support                     = var.tg_params.enable_dns_support == true ? "enable" : "disable"
   multicast_support               = var.tg_params.enable_multicast_support == true ? "enable" : "disable"
