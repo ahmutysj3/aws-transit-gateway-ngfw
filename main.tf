@@ -26,9 +26,9 @@ resource "aws_internet_gateway" "hub" {
 locals {
   hub_subnet_names = {
     "inside"  = 0
-    "outside" = 1
-    "mgmt"    = 2
-    "ha"      = 3
+    "ha"    = 1
+    "outside" = 2
+    "mgmt"      = 3
     "tg"      = 4
   }
 }
@@ -37,12 +37,12 @@ resource "aws_subnet" "hub" {
   for_each                = local.hub_subnet_names
   vpc_id                  = join("", [for v in aws_vpc.main : v.id if v.tags.type == "hub"])
   cidr_block              = cidrsubnet(aws_vpc.main[join("", [for k, v in var.vpc_params : k if v.type == "hub"])].cidr_block, 6, each.value)
-  map_public_ip_on_launch = each.value > 0 ? true : false
+  map_public_ip_on_launch = each.value > 1 ? true : false
 
   tags = {
-    Name = "${var.net_name}_${join("", [for k, v in var.vpc_params : k if v.type == "hub"])}_${each.key}_subnet"
-    type = "hub"
-    vpc  = join("", [for k, v in var.vpc_params : k if v.type == "hub"])
+    Name    = "${var.net_name}_${join("", [for k, v in var.vpc_params : k if v.type == "hub"])}_${each.key}_subnet"
+    type    = "hub"
+    vpc     = join("", [for k, v in var.vpc_params : k if v.type == "hub"])
     purpose = each.key
   }
 }
@@ -236,7 +236,7 @@ resource "aws_route" "route_to_internet" {
 }
 
 resource "aws_route" "route_to_tg_subnet" {
-  for_each = aws_subnet.transit_gateway
+  for_each               = aws_subnet.transit_gateway
   route_table_id         = aws_route_table.hub["external"].id
   destination_cidr_block = each.value.cidr_block
   transit_gateway_id     = aws_ec2_transit_gateway.trace.id
@@ -248,54 +248,54 @@ resource "aws_route" "route_to_tg_subnet" {
 ##################################################################################
 
 resource "aws_security_group" "spokes" {
-  for_each = {for k, v in var.vpc_params : k => v if v.type == "spoke"}
-  name        = "${var.net_name}_${each.key}_sg"
-  vpc_id      = aws_vpc.main[each.key].id
+  for_each = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
+  name     = "${var.net_name}_${each.key}_sg"
+  vpc_id   = aws_vpc.main[each.key].id
 
   tags = {
     Name = "${var.net_name}_${each.key}_sg"
   }
 }
 
-resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_dmz" { 
-  for_each = {for k, v in var.vpc_params : k => v if k == "app"}
+resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_dmz" {
+  for_each          = { for k, v in var.vpc_params : k => v if k == "app" }
   security_group_id = aws_security_group.spokes[each.key].id
-  cidr_ipv4 = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "dmz"])
-  ip_protocol = "-1"
+  cidr_ipv4         = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "dmz"])
+  ip_protocol       = "-1"
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_app" {
-  for_each = {for k, v in var.vpc_params : k => v if v.type == "spoke" && k != "app"}
+  for_each          = { for k, v in var.vpc_params : k => v if v.type == "spoke" && k != "app" }
   security_group_id = aws_security_group.spokes[each.key].id
-  cidr_ipv4 = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "app"])
-  ip_protocol = "-1"
+  cidr_ipv4         = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "app"])
+  ip_protocol       = "-1"
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_db" {
-  for_each = {for k, v in var.vpc_params : k => v if k == "app"}
+  for_each          = { for k, v in var.vpc_params : k => v if k == "app" }
   security_group_id = aws_security_group.spokes[each.key].id
-  cidr_ipv4 = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "db"])
-  ip_protocol = "-1"
+  cidr_ipv4         = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "db"])
+  ip_protocol       = "-1"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_inbound_from_dmz" {
-  for_each = {for k, v in var.vpc_params : k => v if k == "app"}
+  for_each          = { for k, v in var.vpc_params : k => v if k == "app" }
   security_group_id = aws_security_group.spokes[each.key].id
-  cidr_ipv4   = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "dmz"])
-  ip_protocol = "-1"
+  cidr_ipv4         = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "dmz"])
+  ip_protocol       = "-1"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_inbound_from_app" {
-  for_each = {for k, v in var.vpc_params : k => v if v.type == "spoke" && k != "app"}
+  for_each          = { for k, v in var.vpc_params : k => v if v.type == "spoke" && k != "app" }
   security_group_id = aws_security_group.spokes[each.key].id
-  cidr_ipv4   = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "app"])
-  ip_protocol = "-1"
+  cidr_ipv4         = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "app"])
+  ip_protocol       = "-1"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_inbound_from_db" {
-  for_each = {for k, v in var.vpc_params : k => v if k == "app"}
+  for_each          = { for k, v in var.vpc_params : k => v if k == "app" }
   security_group_id = aws_security_group.spokes[each.key].id
-  cidr_ipv4   = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "db"])
-  ip_protocol = "-1"
+  cidr_ipv4         = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "db"])
+  ip_protocol       = "-1"
 }
 
