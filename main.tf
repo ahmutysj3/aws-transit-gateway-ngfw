@@ -211,14 +211,14 @@ resource "aws_route_table" "hub" {
 }
 
 resource "aws_route_table_association" "internal" {
-  for_each       = { for k, v in aws_subnet.hub : v.tags.Name => v if v.tags.Name == "inside" }
+  for_each       = { for k, v in aws_subnet.hub : v.tags.Name => v if v.tags.purpose == "inside" }
   subnet_id      = each.value.id
   route_table_id = aws_route_table.hub["internal"].id
 }
 
 #mgmt, outside, ha
 resource "aws_route_table_association" "external" {
-  for_each       = { for k, v in aws_subnet.hub : v.tags.Name => v if v.tags.Name != "inside" && v.tags.Name != "tg" }
+  for_each       = { for k, v in aws_subnet.hub : v.tags.Name => v if v.tags.purpose != "inside" && v.tags.purpose != "tg" }
   subnet_id      = each.value.id
   route_table_id = aws_route_table.hub["external"].id
 }
@@ -257,7 +257,7 @@ resource "aws_security_group" "spokes" {
   }
 }
 
-resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_dmz" {
+resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_dmz" { 
   for_each = {for k, v in var.vpc_params : k => v if k == "app"}
   security_group_id = aws_security_group.spokes[each.key].id
   cidr_ipv4 = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "dmz"])
@@ -267,14 +267,14 @@ resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_dmz" {
 resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_app" {
   for_each = {for k, v in var.vpc_params : k => v if v.type == "spoke" && k != "app"}
   security_group_id = aws_security_group.spokes[each.key].id
-  cidr_ipv4 = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "dmz"])
+  cidr_ipv4 = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "app"])
   ip_protocol = "-1"
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_db" {
-  for_each = {for k, v in var.vpc_params : k => v if k == "db"}
+  for_each = {for k, v in var.vpc_params : k => v if k == "app"}
   security_group_id = aws_security_group.spokes[each.key].id
-  cidr_ipv4 = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "dmz"])
+  cidr_ipv4 = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "db"])
   ip_protocol = "-1"
 }
 
