@@ -26,9 +26,9 @@ resource "aws_internet_gateway" "hub" {
 locals {
   hub_subnet_names = {
     "inside"  = 0
-    "ha"    = 1
+    "ha"      = 1
     "outside" = 2
-    "mgmt"      = 3
+    "mgmt"    = 3
     "tg"      = 4
   }
 }
