@@ -29,6 +29,9 @@ Use of this module/s will require setting up **Terraform AWS Provider & AWS-CLI*
 - aws_route_table
 - aws_route_table_association
 - aws_route
+- aws_security_group
+- aws_vpc_security_group_ingress_rule
+- aws_vpc_security_group_egress_rule
 - aws_internet_gateway
 - aws_ec2_transit_gateway
 - aws_ec2_transit_gateway_route_table
