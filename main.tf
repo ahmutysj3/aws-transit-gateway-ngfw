@@ -247,25 +247,41 @@ resource "aws_route" "route_to_tg_subnet" {
 ////////////////////////   Security Groups  /////////////////////////////////////
 ##################################################################################
 
-resource "aws_security_group" "spokes" {
+resource "aws_security_group" "main" {
   for_each = var.vpc_params
-  name        = "${var.net_name}_nsg"
+  name        = "${var.net_name}_${each.key}_sg"
   vpc_id      = aws_vpc.main[each.key].id
 
   tags = {
-    Name = "${var.net_name}_nsg"
+    Name = "${var.net_name}_${each.key}_sg"
   }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "hub_traffic" {
-  for_each = aws_security_group.spokes
-  security_group_id = aws_security_group.spokes[each.key].id
+resource "aws_vpc_security_group_ingress_rule" "allow_inbound_hub" {
+  for_each = {for k, v in var.vpc_params : k => v if v.type == "spoke"}
+  security_group_id = aws_security_group.main[each.key].id
   cidr_ipv4 = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.type == "hub"])
   ip_protocol = "-1"
 }
 
-resource "aws_vpc_security_group_ingress_rule" "dmz" {
-  security_group_id = aws_security_group.spokes["dmz"].id
+resource "aws_vpc_security_group_ingress_rule" "allow_inbound_dmz" {
+  for_each = {for k, v in var.vpc_params : k => v if k == "app"}
+  security_group_id = aws_security_group.main[each.key].id
+  cidr_ipv4   = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "dmz"])
+  ip_protocol = "-1"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "allow_inbound_app" {
+  for_each = {for k, v in var.vpc_params : k => v if v.type == "spoke" && k != "app"}
+  security_group_id = aws_security_group.main[each.key].id
   cidr_ipv4   = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "app"])
   ip_protocol = "-1"
 }
+
+resource "aws_vpc_security_group_ingress_rule" "allow_inbound_db" {
+  for_each = {for k, v in var.vpc_params : k => v if k == "app"}
+  security_group_id = aws_security_group.main[each.key].id
+  cidr_ipv4   = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "db"])
+  ip_protocol = "-1"
+}
+
