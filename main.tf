@@ -117,6 +117,13 @@ resource "aws_ec2_transit_gateway_route" "spoke_to_hub" {
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
 }
 
+resource "aws_ec2_transit_gateway_route" "spoke_null" {
+  for_each                       = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
+  destination_cidr_block         = each.value.cidr
+  blackhole = true
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
+}
+
 resource "aws_ec2_transit_gateway_route" "hub_to_spokes" {
   for_each                       = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   destination_cidr_block         = each.value.cidr
