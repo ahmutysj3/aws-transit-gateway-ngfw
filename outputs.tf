@@ -1,6 +1,6 @@
 output "subnets" {
   value = merge(
-    { for k, v in aws_subnet.spokes :
+    { for k, v in aws_subnet.spoke :
       v.tags.Name => {
         cidr : v.cidr_block,
         id : v.id,

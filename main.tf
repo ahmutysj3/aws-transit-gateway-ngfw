@@ -47,7 +47,7 @@ resource "aws_subnet" "hub" {
   }
 }
 
-resource "aws_subnet" "spokes" {
+resource "aws_subnet" "spoke" {
   for_each                = var.subnet_params
   vpc_id                  = aws_vpc.main[each.value.vpc].id
   cidr_block              = cidrsubnet(aws_vpc.main[each.value.vpc].cidr_block, each.value.cidr_mask - tonumber(element(split("/", aws_vpc.main[each.value.vpc].cidr_block), 1)), lookup({ for k, v in keys({ for k, v in var.subnet_params : k => v if v.vpc == each.value.vpc }) : v => k }, each.key))
@@ -63,7 +63,7 @@ resource "aws_subnet" "spokes" {
 resource "aws_subnet" "transit_gateway" {
   for_each   = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   vpc_id     = aws_vpc.main[each.key].id
-  cidr_block = cidrsubnet(aws_vpc.main[each.key].cidr_block, tonumber(element(split("/", element(values({ for k, v in aws_subnet.spokes : k => v.cidr_block if v.tags.vpc == each.key }), 0)), 1)) - tonumber(element(split("/", aws_vpc.main[each.key].cidr_block), 1)), length({ for k, v in aws_subnet.spokes : k => v if v.tags.vpc == each.key }))
+  cidr_block = cidrsubnet(aws_vpc.main[each.key].cidr_block, tonumber(element(split("/", element(values({ for k, v in aws_subnet.spoke : k => v.cidr_block if v.tags.vpc == each.key }), 0)), 1)) - tonumber(element(split("/", aws_vpc.main[each.key].cidr_block), 1)), length({ for k, v in aws_subnet.spoke : k => v if v.tags.vpc == each.key }))
 
   tags = {
     Name = "${var.net_name}_${each.key}_tg_subnet"
@@ -92,12 +92,11 @@ resource "aws_ec2_transit_gateway" "trace" {
 }
 
 // ******  Route Tables ***** //
-resource "aws_ec2_transit_gateway_route_table" "spokes" {
-  for_each           = aws_ec2_transit_gateway_vpc_attachment.spokes
+resource "aws_ec2_transit_gateway_route_table" "spoke" {
   transit_gateway_id = aws_ec2_transit_gateway.trace.id
 
   tags = {
-    Name = "${var.net_name}_${each.key}_tg_rt"
+    Name = "${var.net_name}_spoke_tg_rt"
   }
 }
 
@@ -111,31 +110,30 @@ resource "aws_ec2_transit_gateway_route_table" "hub" {
 
 // ******  Routes ***** //
 resource "aws_ec2_transit_gateway_route" "spoke_to_hub" {
-  for_each                       = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   destination_cidr_block         = "0.0.0.0/0"
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.hub.id
-  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
 }
 
 resource "aws_ec2_transit_gateway_route" "spoke_null" {
   for_each                       = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   destination_cidr_block         = each.value.cidr
   blackhole = true
-  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
 }
 
-resource "aws_ec2_transit_gateway_route" "hub_to_spokes" {
+resource "aws_ec2_transit_gateway_route" "hub_to_spoke" {
   for_each                       = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   destination_cidr_block         = each.value.cidr
-  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spokes[each.key].id
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke[each.key].id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.hub.id
 }
 
 // ******  Route table associations ***** //
-resource "aws_ec2_transit_gateway_route_table_association" "spokes" {
+resource "aws_ec2_transit_gateway_route_table_association" "spoke" {
   for_each                       = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
-  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spokes[each.key].id
-  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spokes[each.key].id
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke[each.key].id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
 }
 
 resource "aws_ec2_transit_gateway_route_table_association" "hub" {
@@ -144,7 +142,7 @@ resource "aws_ec2_transit_gateway_route_table_association" "hub" {
 }
 
 // ******  VPC Attachments ***** //
-resource "aws_ec2_transit_gateway_vpc_attachment" "spokes" {
+resource "aws_ec2_transit_gateway_vpc_attachment" "spoke" {
   for_each                                        = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   subnet_ids                                      = [aws_subnet.transit_gateway[each.key].id]
   transit_gateway_id                              = aws_ec2_transit_gateway.trace.id
@@ -184,7 +182,7 @@ resource "aws_networkmanager_transit_gateway_registration" "trace" {
 //////////////////////// Subnet Route Tables /////////////////////////////////////
 ##################################################################################
 
-resource "aws_route_table" "spokes" {
+resource "aws_route_table" "spoke" {
   for_each = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   vpc_id   = aws_vpc.main[each.key].id
 
@@ -198,10 +196,10 @@ resource "aws_route_table" "spokes" {
   }
 }
 
-resource "aws_route_table_association" "spokes" {
+resource "aws_route_table_association" "spoke" {
   for_each       = var.subnet_params
-  subnet_id      = aws_subnet.spokes[each.key].id
-  route_table_id = aws_route_table.spokes[each.value.vpc].id
+  subnet_id      = aws_subnet.spoke[each.key].id
+  route_table_id = aws_route_table.spoke[each.value.vpc].id
 }
 
 ##################################################################################
@@ -254,7 +252,7 @@ resource "aws_route" "route_to_tg_subnet" {
 ////////////////////////   Security Groups  /////////////////////////////////////
 ##################################################################################
 
-resource "aws_security_group" "spokes" {
+resource "aws_security_group" "spoke" {
   for_each = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   name     = "${var.net_name}_${each.key}_sg"
   vpc_id   = aws_vpc.main[each.key].id
@@ -266,42 +264,42 @@ resource "aws_security_group" "spokes" {
 
 resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_dmz" {
   for_each          = { for k, v in var.vpc_params : k => v if k == "app" }
-  security_group_id = aws_security_group.spokes[each.key].id
+  security_group_id = aws_security_group.spoke[each.key].id
   cidr_ipv4         = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "dmz"])
   ip_protocol       = "-1"
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_app" {
   for_each          = { for k, v in var.vpc_params : k => v if v.type == "spoke" && k != "app" }
-  security_group_id = aws_security_group.spokes[each.key].id
+  security_group_id = aws_security_group.spoke[each.key].id
   cidr_ipv4         = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "app"])
   ip_protocol       = "-1"
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_outbound_to_db" {
   for_each          = { for k, v in var.vpc_params : k => v if k == "app" }
-  security_group_id = aws_security_group.spokes[each.key].id
+  security_group_id = aws_security_group.spoke[each.key].id
   cidr_ipv4         = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "db"])
   ip_protocol       = "-1"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_inbound_from_dmz" {
   for_each          = { for k, v in var.vpc_params : k => v if k == "app" }
-  security_group_id = aws_security_group.spokes[each.key].id
+  security_group_id = aws_security_group.spoke[each.key].id
   cidr_ipv4         = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "dmz"])
   ip_protocol       = "-1"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_inbound_from_app" {
   for_each          = { for k, v in var.vpc_params : k => v if v.type == "spoke" && k != "app" }
-  security_group_id = aws_security_group.spokes[each.key].id
+  security_group_id = aws_security_group.spoke[each.key].id
   cidr_ipv4         = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "app"])
   ip_protocol       = "-1"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_inbound_from_db" {
   for_each          = { for k, v in var.vpc_params : k => v if k == "app" }
-  security_group_id = aws_security_group.spokes[each.key].id
+  security_group_id = aws_security_group.spoke[each.key].id
   cidr_ipv4         = join("", [for v in aws_vpc.main : v.cidr_block if v.tags.vpc == "db"])
   ip_protocol       = "-1"
 }
