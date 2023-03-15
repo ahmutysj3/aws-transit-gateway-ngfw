@@ -20,6 +20,39 @@ resource "aws_internet_gateway" "hub" {
 }
 
 ##################################################################################
+///////////////////////////// Network ACLs ///////////////////////////////////////
+##################################################################################
+
+resource "aws_network_acl" "spoke" {
+  for_each = {for vpck, vpc in aws_vpc.main : vpck => vpc.id if vpc.tags.type == "spoke"}
+  vpc_id = each.value
+
+  egress {
+    protocol   = "-1"
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port = 0
+    to_port = 0
+  }
+
+  tags = {
+    "Name" = "${var.net_name}_${each.key}_nacl"
+  }
+}
+
+/* resource "aws_network_acl_rule" "allow_db_in" {
+  network_acl_id = aws_network_acl.bar.id
+  rule_number    = 100
+  egress         = false
+  protocol       = "tcp"
+  rule_action    = "allow"
+  cidr_block     = aws_vpc.foo.cidr_block
+  from_port      = 22
+  to_port        = 22
+} */
+
+##################################################################################
 //////////////////////////////// Subnets /////////////////////////////////////////
 ##################################################################################
 
