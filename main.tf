@@ -24,16 +24,49 @@ resource "aws_internet_gateway" "hub" {
 ##################################################################################
 
 resource "aws_network_acl" "spoke" {
-  for_each = {for vpck, vpc in aws_vpc.main : vpck => vpc.id if vpc.tags.type == "spoke"}
-  vpc_id = each.value
+  for_each = { for vpck, vpc in aws_vpc.main : vpck => vpc.id if vpc.tags.type == "spoke" }
+  vpc_id   = each.value
 
-  egress {
-    protocol   = "-1"
-    rule_no    = 100
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port = 0
-    to_port = 0
+  dynamic "egress" { // app vpc egress to db
+    iterator = vpc
+    for_each = { for vpck, vpc in aws_vpc.main : vpck => vpc.cidr_block if vpc.tags.vpc == "db" && each.key == "app"}
+
+    content {
+      protocol   = "-1"
+      rule_no    = 100
+      action     = "allow"
+      cidr_block = vpc.value
+      from_port  = 0
+      to_port    = 0
+    }
+  }
+
+  dynamic "egress" { // app vpc egress to dmz
+    iterator = vpc
+    for_each = { for vpck, vpc in aws_vpc.main : vpck => vpc.cidr_block if vpc.tags.vpc == "dmz" && each.key == "app"}
+
+    content {
+      protocol   = "-1"
+      rule_no    = 101
+      action     = "allow"
+      cidr_block = vpc.value
+      from_port  = 0
+      to_port    = 0
+    }
+  }
+
+  dynamic "egress" { // db vpc egress to app
+    iterator = vpc
+    for_each = { for vpck, vpc in aws_vpc.main : vpck => vpc.cidr_block if vpc.tags.vpc == "app" && each.key == "db"}
+
+    content {
+      protocol   = "-1"
+      rule_no    = 100
+      action     = "allow"
+      cidr_block = vpc.value
+      from_port  = 0
+      to_port    = 0
+    }
   }
 
   tags = {
@@ -41,16 +74,6 @@ resource "aws_network_acl" "spoke" {
   }
 }
 
-/* resource "aws_network_acl_rule" "allow_db_in" {
-  network_acl_id = aws_network_acl.bar.id
-  rule_number    = 100
-  egress         = false
-  protocol       = "tcp"
-  rule_action    = "allow"
-  cidr_block     = aws_vpc.foo.cidr_block
-  from_port      = 22
-  to_port        = 22
-} */
 
 ##################################################################################
 //////////////////////////////// Subnets /////////////////////////////////////////
@@ -151,7 +174,7 @@ resource "aws_ec2_transit_gateway_route" "spoke_to_hub" {
 resource "aws_ec2_transit_gateway_route" "spoke_null" {
   for_each                       = { for k, v in var.vpc_params : k => v if v.type == "spoke" }
   destination_cidr_block         = each.value.cidr
-  blackhole = true
+  blackhole                      = true
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
 }
 
