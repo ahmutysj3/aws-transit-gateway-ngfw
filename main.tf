@@ -161,6 +161,42 @@ resource "aws_subnet" "tgw_sec" {
   }
 }
 
+# Data Sources - Availability Zones
 data "aws_availability_zones" "available" {
   state = "available"
 }
+
+# Spoke VPC Route Tables
+resource "aws_route_table" "vpc_asubnet" {
+  vpc_id = aws_vpc.vpc_a.id
+
+  tags = {
+    Name = "vpc_a_route_table"
+  }
+}
+
+resource "aws_route_table" "vpc_b_subnet" {
+  vpc_id = aws_vpc.vpc_b.id
+
+  tags = {
+    Name = "vpc_b_route_table"
+  }
+}
+
+# Firewall Route Tables
+resource "aws_route_table" "fw_internal_pri" {
+  vpc_id = aws_vpc.vpc_sec.id
+
+  tags = {
+    Name = "fw_internal_route_table_pri"
+  }
+}
+
+resource "aws_route_table" "fw_external_pri" {
+  vpc_id = aws_vpc.vpc_sec.id
+
+  tags = {
+    Name = "fw_external_route_table_pri"
+  }
+}
+
