@@ -1,3 +1,12 @@
+# Security VPC
+resource "aws_vpc" "vpc_sec" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "vpc_sec"
+  }
+}
+
 # Spoke VPCs
 resource "aws_vpc" "vpc_a" {
   cidr_block = "10.1.0.0/16"
@@ -12,15 +21,6 @@ resource "aws_vpc" "vpc_b" {
 
   tags = {
     Name = "vpc_b"
-  }
-}
-
-# Security VPC
-resource "aws_vpc" "vpc_sec" {
-  cidr_block = "10.0.0.0/16"
-
-  tags = {
-    Name = "vpc_sec"
   }
 }
 
@@ -60,7 +60,7 @@ resource "aws_subnet" "vpc_b" {
 # Firewall Subnets - Primary AZ
 resource "aws_subnet" "fw_mgmt_pri" {
   vpc_id                  = aws_vpc.vpc_sec.id
-  cidr_block              = "10.0.11.0/24"
+  cidr_block              = "10.0.10.0/24"
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[0]
 
@@ -71,7 +71,7 @@ resource "aws_subnet" "fw_mgmt_pri" {
 
 resource "aws_subnet" "fw_inside_pri" {
   vpc_id                  = aws_vpc.vpc_sec.id
-  cidr_block              = "10.0.12.0/24"
+  cidr_block              = "10.0.11.0/24"
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
 
@@ -83,7 +83,7 @@ resource "aws_subnet" "fw_inside_pri" {
 
 resource "aws_subnet" "fw_outside_pri" {
   vpc_id                  = aws_vpc.vpc_sec.id
-  cidr_block              = "10.0.13.0/24"
+  cidr_block              = "10.0.12.0/24"
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[0]
 
@@ -96,7 +96,7 @@ resource "aws_subnet" "fw_outside_pri" {
 
 resource "aws_subnet" "fw_heartbeat_pri" {
   vpc_id                  = aws_vpc.vpc_sec.id
-  cidr_block              = "10.0.14.0/24"
+  cidr_block              = "10.0.13.0/24"
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
 
@@ -108,7 +108,7 @@ resource "aws_subnet" "fw_heartbeat_pri" {
 
 resource "aws_subnet" "tgw_pri" {
   vpc_id                  = aws_vpc.vpc_sec.id
-  cidr_block              = "10.0.254.0/24"
+  cidr_block              = "10.0.14.0/24"
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
 
@@ -120,7 +120,7 @@ resource "aws_subnet" "tgw_pri" {
 # Firewall Subnets - Secondary AZ
 resource "aws_subnet" "fw_mgmt_sec" {
   vpc_id                  = aws_vpc.vpc_sec.id
-  cidr_block              = "10.0.21.0/24"
+  cidr_block              = "10.0.20.0/24"
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[1]
 
@@ -131,7 +131,7 @@ resource "aws_subnet" "fw_mgmt_sec" {
 
 resource "aws_subnet" "fw_inside_sec" {
   vpc_id                  = aws_vpc.vpc_sec.id
-  cidr_block              = "10.0.22.0/24"
+  cidr_block              = "10.0.21.0/24"
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[1]
   tags = {
@@ -141,7 +141,7 @@ resource "aws_subnet" "fw_inside_sec" {
 
 resource "aws_subnet" "fw_outside_sec" {
   vpc_id                  = aws_vpc.vpc_sec.id
-  cidr_block              = "10.0.23.0/24"
+  cidr_block              = "10.0.22.0/24"
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[1]
 
@@ -152,7 +152,7 @@ resource "aws_subnet" "fw_outside_sec" {
 
 resource "aws_subnet" "fw_heartbeat_sec" {
   vpc_id                  = aws_vpc.vpc_sec.id
-  cidr_block              = "10.0.24.0/24"
+  cidr_block              = "10.0.23.0/24"
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[1]
   tags = {
@@ -162,7 +162,7 @@ resource "aws_subnet" "fw_heartbeat_sec" {
 
 resource "aws_subnet" "tgw_sec" {
   vpc_id                  = aws_vpc.vpc_sec.id
-  cidr_block              = "10.0.255.0/24"
+  cidr_block              = "10.0.24.0/24"
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[1]
   tags = {
