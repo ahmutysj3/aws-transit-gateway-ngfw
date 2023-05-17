@@ -239,3 +239,19 @@ resource "aws_route_table_association" "vpc_b_subnet" {
   route_table_id = aws_route_table.vpc_b_subnet.id
 }
 
+# Transit Gateway
+
+resource "aws_ec2_transit_gateway" "main" {
+  description = "Main Transit Gateway"
+  amazon_side_asn = 64512
+  auto_accept_shared_attachments = "enable"
+  default_route_table_association = "disable"
+  default_route_table_propagation = "disable"
+  multicast_support = "disable"
+  dns_support = "enable"
+  vpn_ecmp_support = "enable"
+  transit_gateway_cidr_blocks = ["10.0.14.0/24","10.0.24.0/24"]
+  tags = {
+    Name = "tgw_main"
+  }
+}
