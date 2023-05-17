@@ -192,7 +192,7 @@ resource "aws_route_table" "spoke_b_subnet" {
   }
 }
 
-# Firewall Route Tables
+# Hub Route Tables
 resource "aws_route_table" "fw_internal_pri" {
   vpc_id = aws_vpc.hub_vpc.id
 
@@ -225,6 +225,7 @@ resource "aws_route_table" "fw_external_sec" {
   }
 }
 
+# Subnet Route Table Associations
 resource "aws_route_table_association" "fw_inside_pri" {
   subnet_id      = aws_subnet.fw_inside_pri.id
   route_table_id = aws_route_table.fw_internal_pri.id
@@ -276,7 +277,6 @@ resource "aws_route_table_association" "spoke_b_subnet" {
 }
 
 # Transit Gateway
-
 resource "aws_ec2_transit_gateway" "main" {
   description                     = "Main Transit Gateway"
   amazon_side_asn                 = 64512
@@ -292,10 +292,30 @@ resource "aws_ec2_transit_gateway" "main" {
   }
 }
 
+# Transit Gateway Route Tables
 resource "aws_ec2_transit_gateway_route_table" "spoke" {
   transit_gateway_id = aws_ec2_transit_gateway.main.id
 }
 
 resource "aws_ec2_transit_gateway_route_table" "hub" {
   transit_gateway_id = aws_ec2_transit_gateway.main.id
+}
+
+# Transit Gateway VPC Attachments
+resource "aws_ec2_transit_gateway_vpc_attachment" "spoke_a" {
+  subnet_ids         = [aws_subnet.spoke_a_subnet.id]
+  transit_gateway_id = aws_ec2_transit_gateway.main.id
+  vpc_id             = aws_vpc.spoke_vpc_a.id
+}
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "spoke_b" {
+  subnet_ids         = [aws_subnet.spoke_b_subnet.id]
+  transit_gateway_id = aws_ec2_transit_gateway.main.id
+  vpc_id             = aws_vpc.spoke_vpc_b.id
+}
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "hub" {
+  subnet_ids         = [aws_subnet.tgw_pri.id, aws_subnet.tgw_sec.id]
+  transit_gateway_id = aws_ec2_transit_gateway.main.id
+  vpc_id             = aws_vpc.hub_vpc.id
 }
