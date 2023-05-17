@@ -3,7 +3,7 @@
 resource "aws_subnet" "fw_mgmt_pri" {
   vpc_id                  = aws_vpc.firewall_vpc.id
   cidr_block              = "10.0.10.0/24"
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
 
   tags = {
@@ -63,7 +63,7 @@ resource "aws_subnet" "tgw_pri" {
 resource "aws_subnet" "fw_mgmt_sec" {
   vpc_id                  = aws_vpc.firewall_vpc.id
   cidr_block              = "10.0.20.0/24"
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[1]
 
   tags = {
