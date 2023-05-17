@@ -176,7 +176,7 @@ data "aws_availability_zones" "available" {
 }
 
 # Spoke VPC Route Tables
-resource "aws_route_table" "vpc_asubnet" {
+resource "aws_route_table" "vpc_a_subnet" {
   vpc_id = aws_vpc.vpc_a.id
 
   tags = {
@@ -207,5 +207,35 @@ resource "aws_route_table" "fw_external_pri" {
   tags = {
     Name = "fw_external_route_table_pri"
   }
+}
+
+resource "aws_route_table_association" "fw_inside_pri" {
+  subnet_id      = aws_subnet.fw_inside_pri.id
+  route_table_id = aws_route_table.fw_internal_pri.id
+}
+
+resource "aws_route_table_association" "fw_outside_pri" {
+  subnet_id      = aws_subnet.fw_outside_pri.id
+  route_table_id = aws_route_table.fw_external_pri.id
+}
+
+resource "aws_route_table_association" "fw_mgmt_pri" {
+  subnet_id = aws_subnet.fw_mgmt_pri.id
+  route_table_id = aws_route_table.fw_external_pri.id
+}
+
+resource "aws_route_table_association" "fw_heartbeat_pri" {
+  subnet_id = aws_subnet.fw_heartbeat_pri.id
+  route_table_id = aws_route_table.fw_internal_pri.id
+}
+
+resource "aws_route_table_association" "vpc_a_subnet" {
+  subnet_id = aws_subnet.vpc_a.id
+  route_table_id = aws_route_table.vpc_a_subnet.id
+}
+
+resource "aws_route_table_association" "vpc_b_subnet" {
+  subnet_id = aws_subnet.vpc_b.id
+  route_table_id = aws_route_table.vpc_b_subnet.id
 }
 
