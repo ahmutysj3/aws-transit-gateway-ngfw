@@ -1,9 +1,9 @@
 # Security VPC
-resource "aws_vpc" "hub_vpc" {
+resource "aws_vpc" "firewall_vpc" {
   cidr_block = "10.0.0.0/16"
 
   tags = {
-    Name = "hub_vpc"
+    Name = "firewall_vpc"
   }
 }
 
@@ -26,10 +26,10 @@ resource "aws_vpc" "spoke_vpc_b" {
 
 # Security VPC Internet Gateway
 resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.hub_vpc.id
+  vpc_id = aws_vpc.firewall_vpc.id
 
   tags = {
-    Name = "hub_vpc_igw"
+    Name = "firewall_vpc_igw"
   }
 }
 
@@ -59,7 +59,7 @@ resource "aws_subnet" "spoke_b_subnet" {
 
 # Firewall Subnets - Primary AZ
 resource "aws_subnet" "fw_mgmt_pri" {
-  vpc_id                  = aws_vpc.hub_vpc.id
+  vpc_id                  = aws_vpc.firewall_vpc.id
   cidr_block              = "10.0.10.0/24"
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[0]
@@ -70,7 +70,7 @@ resource "aws_subnet" "fw_mgmt_pri" {
 }
 
 resource "aws_subnet" "fw_inside_pri" {
-  vpc_id                  = aws_vpc.hub_vpc.id
+  vpc_id                  = aws_vpc.firewall_vpc.id
   cidr_block              = "10.0.11.0/24"
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
@@ -82,7 +82,7 @@ resource "aws_subnet" "fw_inside_pri" {
 }
 
 resource "aws_subnet" "fw_outside_pri" {
-  vpc_id                  = aws_vpc.hub_vpc.id
+  vpc_id                  = aws_vpc.firewall_vpc.id
   cidr_block              = "10.0.12.0/24"
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[0]
@@ -95,7 +95,7 @@ resource "aws_subnet" "fw_outside_pri" {
 }
 
 resource "aws_subnet" "fw_heartbeat_pri" {
-  vpc_id                  = aws_vpc.hub_vpc.id
+  vpc_id                  = aws_vpc.firewall_vpc.id
   cidr_block              = "10.0.13.0/24"
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
@@ -107,7 +107,7 @@ resource "aws_subnet" "fw_heartbeat_pri" {
 }
 
 resource "aws_subnet" "tgw_pri" {
-  vpc_id                  = aws_vpc.hub_vpc.id
+  vpc_id                  = aws_vpc.firewall_vpc.id
   cidr_block              = "10.0.14.0/24"
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
@@ -119,7 +119,7 @@ resource "aws_subnet" "tgw_pri" {
 
 # Firewall Subnets - Secondary AZ
 resource "aws_subnet" "fw_mgmt_sec" {
-  vpc_id                  = aws_vpc.hub_vpc.id
+  vpc_id                  = aws_vpc.firewall_vpc.id
   cidr_block              = "10.0.20.0/24"
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[1]
@@ -130,7 +130,7 @@ resource "aws_subnet" "fw_mgmt_sec" {
 }
 
 resource "aws_subnet" "fw_inside_sec" {
-  vpc_id                  = aws_vpc.hub_vpc.id
+  vpc_id                  = aws_vpc.firewall_vpc.id
   cidr_block              = "10.0.21.0/24"
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[1]
@@ -140,7 +140,7 @@ resource "aws_subnet" "fw_inside_sec" {
 }
 
 resource "aws_subnet" "fw_outside_sec" {
-  vpc_id                  = aws_vpc.hub_vpc.id
+  vpc_id                  = aws_vpc.firewall_vpc.id
   cidr_block              = "10.0.22.0/24"
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[1]
@@ -151,7 +151,7 @@ resource "aws_subnet" "fw_outside_sec" {
 }
 
 resource "aws_subnet" "fw_heartbeat_sec" {
-  vpc_id                  = aws_vpc.hub_vpc.id
+  vpc_id                  = aws_vpc.firewall_vpc.id
   cidr_block              = "10.0.23.0/24"
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[1]
@@ -161,7 +161,7 @@ resource "aws_subnet" "fw_heartbeat_sec" {
 }
 
 resource "aws_subnet" "tgw_sec" {
-  vpc_id                  = aws_vpc.hub_vpc.id
+  vpc_id                  = aws_vpc.firewall_vpc.id
   cidr_block              = "10.0.24.0/24"
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[1]
@@ -194,7 +194,7 @@ resource "aws_route_table" "spoke_b_subnet" {
 
 # Hub Route Tables
 resource "aws_route_table" "fw_internal_pri" {
-  vpc_id = aws_vpc.hub_vpc.id
+  vpc_id = aws_vpc.firewall_vpc.id
 
   tags = {
     Name = "fw_internal_route_table_pri"
@@ -202,7 +202,7 @@ resource "aws_route_table" "fw_internal_pri" {
 }
 
 resource "aws_route_table" "fw_external_pri" {
-  vpc_id = aws_vpc.hub_vpc.id
+  vpc_id = aws_vpc.firewall_vpc.id
 
   tags = {
     Name = "fw_external_route_table_pri"
@@ -210,7 +210,7 @@ resource "aws_route_table" "fw_external_pri" {
 }
 
 resource "aws_route_table" "fw_internal_sec" {
-  vpc_id = aws_vpc.hub_vpc.id
+  vpc_id = aws_vpc.firewall_vpc.id
 
   tags = {
     Name = "fw_internal_route_table_sec"
@@ -218,7 +218,7 @@ resource "aws_route_table" "fw_internal_sec" {
 }
 
 resource "aws_route_table" "fw_external_sec" {
-  vpc_id = aws_vpc.hub_vpc.id
+  vpc_id = aws_vpc.firewall_vpc.id
 
   tags = {
     Name = "fw_external_route_table_sec"
@@ -307,17 +307,21 @@ resource "aws_ec2_transit_gateway_route_table" "hub" {
   }
 }
 
-resource "aws_ec2_transit_gateway_route" "spoke_a" {
+# Transit Gateway Routes
+resource "aws_ec2_transit_gateway_route" "spoke_to_hub" {
   destination_cidr_block = "0.0.0.0/0"
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
-  transit_gateway_attachment_id = aws_ec2_transit_gateway_vpc_attachment.spoke_a.id
+  transit_gateway_attachment_id = aws_ec2_transit_gateway_vpc_attachment.hub.id
 }
 
-resource "aws_ec2_transit_gateway_route" "spoke_b" {
-  destination_cidr_block = "0.0.0.0/0"
+resource "aws_ec2_transit_gateway_route" "spoke_a_null_route" {
+  destination_cidr_block = "10.1.1.0/24"
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
-  transit_gateway_attachment_id = aws_ec2_transit_gateway_vpc_attachment.spoke_b.id
+  blackhole = true
 }
+
+resource "aws_ec2_transit_gateway_route" "spoke_b_null_route" {
+  destination_cidr_block = "
 
 resource "aws_ec2_transit_gateway_route" "hub_to_spoke_a" {
   destination_cidr_block = "10.1.1.0/24"
@@ -363,6 +367,6 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "spoke_b" {
 resource "aws_ec2_transit_gateway_vpc_attachment" "hub" {
   subnet_ids         = [aws_subnet.tgw_pri.id, aws_subnet.tgw_sec.id]
   transit_gateway_id = aws_ec2_transit_gateway.main.id
-  vpc_id             = aws_vpc.hub_vpc.id
+  vpc_id             = aws_vpc.firewall_vpc.id
 }
 
