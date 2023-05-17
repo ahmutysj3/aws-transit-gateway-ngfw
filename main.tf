@@ -24,6 +24,15 @@ resource "aws_vpc" "vpc_sec" {
   }
 }
 
+# Security VPC Internet Gateway
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.vpc_sec.id
+
+  tags = {
+    Name = "vpc_sec_igw"
+  }
+}
+
 # VPC A Private Subnet
 resource "aws_subnet" "vpc_a" {
   vpc_id                  = aws_vpc.vpc_a.id
