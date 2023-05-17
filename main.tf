@@ -209,6 +209,22 @@ resource "aws_route_table" "fw_external_pri" {
   }
 }
 
+resource "aws_route_table" "fw_internal_sec" {
+  vpc_id = aws_vpc.hub_vpc.id
+
+  tags = {
+    Name = "fw_internal_route_table_sec"
+  }
+}
+
+resource "aws_route_table" "fw_external_sec" {
+  vpc_id = aws_vpc.hub_vpc.id
+
+  tags = {
+    Name = "fw_external_route_table_sec"
+  }
+}
+
 resource "aws_route_table_association" "fw_inside_pri" {
   subnet_id      = aws_subnet.fw_inside_pri.id
   route_table_id = aws_route_table.fw_internal_pri.id
