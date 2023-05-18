@@ -12,7 +12,7 @@ resource "aws_security_group" "firewall" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  egress  {
+  egress {
     description = "Allow outbound traffic to the Internet"
     from_port   = 0
     to_port     = 0

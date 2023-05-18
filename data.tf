@@ -9,17 +9,17 @@ data "aws_ami" "fortigate" {
   #most_recent = true
 
   filter {
-    name = "name"
+    name   = "name"
     values = ["FortiGate-VM64-AWSONDEMAND*7.4.0*"]
   }
 
   filter {
-    name = "architecture"
+    name   = "architecture"
     values = ["x86_64"]
   }
 
   filter {
-    name = "virtualization-type"
+    name   = "virtualization-type"
     values = ["hvm"]
   }
 }

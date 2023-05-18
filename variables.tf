@@ -4,3 +4,8 @@ variable "region_aws" {
   default     = "us-east-1"
 }
 
+variable "ssh_key_name" {
+  description = "Name of the SSH public key to be added to instance authorized_keys file"
+  type        = string
+  default     = "trace_linux_vm"
+}
