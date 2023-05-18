@@ -1,4 +1,5 @@
 resource "aws_security_group" "firewall" {
+  depends_on = [ aws_vpc.firewall_vpc ]
   name        = "Firewall Allow-All Security Group"
   description = "Allow all traffic to/from the Internet"
   vpc_id      = aws_vpc.firewall_vpc.id

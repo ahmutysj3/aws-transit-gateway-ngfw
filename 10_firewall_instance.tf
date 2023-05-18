@@ -6,7 +6,6 @@ resource "aws_instance" "fortigate" {
   ami               = data.aws_ami.fortigate.id
   instance_type     = "c6i.xlarge"
   key_name          = var.ssh_key_name
-  associate_public_ip_address = false
   monitoring = false
   
 
