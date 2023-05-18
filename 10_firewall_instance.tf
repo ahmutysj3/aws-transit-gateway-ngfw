@@ -8,14 +8,14 @@ resource "aws_instance" "fortigate" {
   key_name          = var.ssh_key_name
   associate_public_ip_address = false
   monitoring = false
-
+  
 
   cpu_options {
     core_count       = 2
     threads_per_core = 2
   }
 
-/*   network_interface {
+  network_interface {
     network_interface_id = aws_network_interface.fw_outside.id
     device_index         = 0
   }
@@ -33,7 +33,7 @@ resource "aws_instance" "fortigate" {
   network_interface {
     network_interface_id = aws_network_interface.fw_heartbeat.id
     device_index         = 3
-  } */
+  }
 
 }
 
