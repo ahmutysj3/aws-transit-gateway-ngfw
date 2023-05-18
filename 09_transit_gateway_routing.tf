@@ -32,17 +32,12 @@ resource "aws_ec2_transit_gateway_route" "spoke_b_null_route" {
   blackhole                      = true
 }
 
-resource "aws_ec2_transit_gateway_route" "fw_outside_pri_null_route" {
+resource "aws_ec2_transit_gateway_route" "fw_outside_null_route" {
   destination_cidr_block         = "10.0.12.0/24"
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.firewall.id
   blackhole                      = true
 }
 
-resource "aws_ec2_transit_gateway_route" "fw_outside_sec_null_route" {
-  destination_cidr_block         = "10.0.22.0/24"
-  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.firewall.id
-  blackhole                      = true
-}
 
 resource "aws_ec2_transit_gateway_route" "firewall_to_spoke_a" {
   destination_cidr_block         = "10.1.1.0/24"
