@@ -26,6 +26,7 @@ resource "aws_vpc" "spoke_vpc_b" {
 
 # Security VPC Internet Gateway
 resource "aws_internet_gateway" "main" {
+  depends_on = [ aws_vpc.firewall_vpc ]
   tags = {
     Name = "main_igw"
   }
