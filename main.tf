@@ -45,6 +45,18 @@ resource "aws_network_interface" "fw_outside_pri" {
   }
 }
 
+resource "aws_eip" "fw_outside_pri" {
+  tags = {
+    Name = "fw_outside_eip_pri"
+  }
+  depends_on = [ aws_instance.fortigate_pri ]
+  associate_with_private_ip = "10.0.12.10"
+  network_border_group = var.region_aws
+  vpc = true
+  public_ipv4_pool = "amazon"
+  network_interface = aws_network_interface.fw_outside_pri.id
+}
+
 resource "aws_network_interface" "fw_outside_sec" {
   subnet_id         = aws_subnet.fw_outside_sec.id
   private_ips       = ["10.0.22.10"]
@@ -80,14 +92,6 @@ resource "aws_instance" "fortigate_pri" {
   ami               = data.aws_ami.fortigate.id
   instance_type     = "c6i.xlarge"
   key_name          = var.ssh_key_name
-  
-  cpu_options {
-    core_count = 2
-    threads_per_core = 2
-
-  }
-
-  monitoring = false
 
   network_interface {
     network_interface_id = aws_network_interface.fw_outside_pri.id
