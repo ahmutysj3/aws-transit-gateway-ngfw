@@ -49,12 +49,12 @@ resource "aws_eip" "fw_outside_pri" {
   tags = {
     Name = "fw_outside_eip_pri"
   }
-  depends_on = [ aws_instance.fortigate_pri ]
+  depends_on                = [aws_instance.fortigate_pri]
   associate_with_private_ip = "10.0.12.10"
-  network_border_group = var.region_aws
-  vpc = true
-  public_ipv4_pool = "amazon"
-  network_interface = aws_network_interface.fw_outside_pri.id
+  network_border_group      = var.region_aws
+  vpc                       = true
+  public_ipv4_pool          = "amazon"
+  network_interface         = aws_network_interface.fw_outside_pri.id
 }
 
 resource "aws_network_interface" "fw_outside_sec" {
