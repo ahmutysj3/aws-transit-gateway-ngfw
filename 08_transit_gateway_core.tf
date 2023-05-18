@@ -35,7 +35,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "spoke_b" {
 resource "aws_ec2_transit_gateway_vpc_attachment" "firewall" {
   transit_gateway_default_route_table_association = false
   transit_gateway_default_route_table_propagation = false
-  subnet_ids                                      = [aws_subnet.tgw_pri.id, aws_subnet.tgw_sec.id]
+  subnet_ids                                      = [aws_subnet.tgw.id]
   transit_gateway_id                              = aws_ec2_transit_gateway.main.id
   vpc_id                                          = aws_vpc.firewall_vpc.id
 }
