@@ -12,6 +12,6 @@ variable "ssh_key_name" {
 
 variable "network_prefix" {
   description = "prefix to prepend on all resource names within the network"
-  type = string
-  default = "trace"
+  type        = string
+  default     = "trace"
 }

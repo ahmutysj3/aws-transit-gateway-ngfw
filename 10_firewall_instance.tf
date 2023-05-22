@@ -6,8 +6,8 @@ resource "aws_instance" "fortigate" {
   ami               = data.aws_ami.fortigate.id
   instance_type     = "c6i.xlarge"
   key_name          = var.ssh_key_name
-  monitoring = false
-  
+  monitoring        = false
+
 
   cpu_options {
     core_count       = 2
@@ -38,7 +38,7 @@ resource "aws_instance" "fortigate" {
 
 resource "aws_network_interface" "fw_mgmt" {
   subnet_id         = aws_subnet.fw_mgmt.id
-  security_groups = [aws_security_group.firewall.id]
+  security_groups   = [aws_security_group.firewall.id]
   private_ips       = ["10.0.10.10"]
   source_dest_check = false
 
@@ -49,7 +49,7 @@ resource "aws_network_interface" "fw_mgmt" {
 
 resource "aws_network_interface" "fw_inside" {
   subnet_id         = aws_subnet.fw_inside.id
-  security_groups = [aws_security_group.firewall.id]
+  security_groups   = [aws_security_group.firewall.id]
   private_ips       = ["10.0.11.10"]
   source_dest_check = false
   tags = {
@@ -59,7 +59,7 @@ resource "aws_network_interface" "fw_inside" {
 
 resource "aws_network_interface" "fw_outside" {
   subnet_id         = aws_subnet.fw_outside.id
-  security_groups = [aws_security_group.firewall.id]
+  security_groups   = [aws_security_group.firewall.id]
   private_ips       = ["10.0.12.10"]
   source_dest_check = false
   tags = {
@@ -68,7 +68,7 @@ resource "aws_network_interface" "fw_outside" {
 }
 
 resource "aws_network_interface" "fw_heartbeat" {
-  security_groups = [aws_security_group.firewall.id]
+  security_groups   = [aws_security_group.firewall.id]
   subnet_id         = aws_subnet.fw_heartbeat.id
   private_ips       = ["10.0.13.10"]
   source_dest_check = false

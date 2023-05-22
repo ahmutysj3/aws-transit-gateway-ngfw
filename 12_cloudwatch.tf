@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_log_group" "flow_logs" {
-  name = "${var.network_prefix}_flow_log_grp"
+  name         = "${var.network_prefix}_flow_log_grp"
   skip_destroy = false
 }
 
@@ -43,8 +43,25 @@ resource "aws_iam_role_policy" "flow_logs" {
 }
 
 resource "aws_flow_log" "cloud_watch_firewall_vpc" {
-  iam_role_arn = aws_iam_role.flow_logs.arn
+  count           = 1
+  iam_role_arn    = aws_iam_role.flow_logs.arn
   log_destination = aws_cloudwatch_log_group.flow_logs.arn
-  traffic_type = "ALL"
-  vpc_id = aws_vpc.firewall_vpc.id
+  traffic_type    = "ALL"
+  vpc_id          = aws_vpc.firewall_vpc.id
+}
+
+resource "aws_flow_log" "cloud_watch_spoke_a_vpc" {
+  count           = 1
+  iam_role_arn    = aws_iam_role.flow_logs.arn
+  log_destination = aws_cloudwatch_log_group.flow_logs.arn
+  traffic_type    = "ALL"
+  vpc_id          = aws_vpc.spoke_a_vpc.id
+}
+
+resource "aws_flow_log" "cloud_watch_spoke_b_vpc" {
+  count           = 1
+  iam_role_arn    = aws_iam_role.flow_logs.arn
+  log_destination = aws_cloudwatch_log_group.flow_logs.arn
+  traffic_type    = "ALL"
+  vpc_id          = aws_vpc.spoke_b_vpc.id
 }

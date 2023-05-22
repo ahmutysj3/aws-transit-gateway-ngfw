@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "flow_logs" {
-  bucket = "${var.network_prefix}-vpc-flow-logs"
+  bucket        = "${var.network_prefix}-vpc-flow-logs"
   force_destroy = true
 
   tags = {
