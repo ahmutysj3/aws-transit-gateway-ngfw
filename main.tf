@@ -3,6 +3,19 @@ resource "aws_cloudwatch_log_group" "flow_logs" {
   skip_destroy = false
 }
 
+data "aws_iam_policy_document" "assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["vpc-flow-logs.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+  }
+}
+
 data "aws_iam_policy_document" "flow_logs" {
   statement {
     effect = "Allow"
@@ -20,7 +33,7 @@ data "aws_iam_policy_document" "flow_logs" {
 }
 resource "aws_iam_role" "flow_logs" {
   name               = "${var.network_prefix}_flow_log_iam_role"
-  assume_role_policy = data.aws_iam_policy_document.flow_logs.json
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
 resource "aws_iam_role_policy" "flow_logs" {
