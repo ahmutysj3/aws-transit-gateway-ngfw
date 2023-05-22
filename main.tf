@@ -21,22 +21,6 @@ resource "aws_iam_role" "flow_logs" {
   assume_role_policy = data.aws_iam_policy_document.flow_logs.json
 }
 
-data "aws_iam_policy_document" "flow_logs" {
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-      "logs:DescribeLogGroups",
-      "logs:DescribeLogStreams",
-    ]
-
-    resources = ["*"]
-  }
-}
-
 resource "aws_iam_role_policy" "flow_logs" {
   name   = "${var.network_prefix}_flow_log_iam_policy"
   role   = aws_iam_role.flow_logs.id
