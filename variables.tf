@@ -15,3 +15,8 @@ variable "network_prefix" {
   type        = string
   default     = "trace"
 }
+
+variable "supernet_index" {
+  description = "this value will be used in second octet for network cidrs"
+  default = "251"
+}
