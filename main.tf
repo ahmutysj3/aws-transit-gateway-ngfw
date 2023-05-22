@@ -520,13 +520,11 @@ resource "aws_flow_log" "firewall_vpc" {
 }
 
 resource "aws_cloudwatch_log_group" "flow_logs" {
-  count        = 1
   name         = "${var.network_prefix}_flow_log_grp"
   skip_destroy = false
 }
 
 data "aws_iam_policy_document" "assume_role" {
-  count = 1
   statement {
     effect = "Allow"
 
@@ -540,7 +538,6 @@ data "aws_iam_policy_document" "assume_role" {
 }
 
 data "aws_iam_policy_document" "flow_logs" {
-  count = 1
   statement {
     effect = "Allow"
 
@@ -556,13 +553,11 @@ data "aws_iam_policy_document" "flow_logs" {
   }
 }
 resource "aws_iam_role" "flow_logs" {
-  count              = 1
   name               = "${var.network_prefix}_flow_log_iam_role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
 resource "aws_iam_role_policy" "flow_logs" {
-  count  = 1
   name   = "${var.network_prefix}_flow_log_iam_policy"
   role   = aws_iam_role.flow_logs.id
   policy = data.aws_iam_policy_document.flow_logs.json
