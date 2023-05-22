@@ -293,7 +293,7 @@ resource "aws_ec2_transit_gateway" "main" {
   multicast_support               = "disable"
   dns_support                     = "enable"
   vpn_ecmp_support                = "enable"
-  transit_gateway_cidr_blocks     = ["10.0.14.0/24", "10.0.24.0/24"]
+  transit_gateway_cidr_blocks     = ["10.${var.supernet_index}.14.0/24", "10.${var.supernet_index}.24.0/24"]
   tags = {
     Name = "tgw_main"
   }
@@ -359,7 +359,7 @@ resource "aws_ec2_transit_gateway_route" "spoke_b_null_route" {
 }
 
 resource "aws_ec2_transit_gateway_route" "fw_outside_null_route" {
-  destination_cidr_block         = "10.0.12.0/24"
+  destination_cidr_block         = "10.${var.supernet_index}.0.128/26"
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.firewall.id
   blackhole                      = true
 }
@@ -434,7 +434,7 @@ resource "aws_instance" "fortigate" {
 resource "aws_network_interface" "fw_mgmt" {
   subnet_id         = aws_subnet.fw_mgmt.id
   security_groups   = [aws_security_group.firewall.id]
-  private_ips       = ["10.0.10.10"]
+  private_ips       = ["10.${var.supernet_index}.10.10"]
   source_dest_check = false
 
   tags = {
@@ -445,7 +445,7 @@ resource "aws_network_interface" "fw_mgmt" {
 resource "aws_network_interface" "fw_inside" {
   subnet_id         = aws_subnet.fw_inside.id
   security_groups   = [aws_security_group.firewall.id]
-  private_ips       = ["10.0.11.10"]
+  private_ips       = ["10.${var.supernet_index}.0.74/26"]
   source_dest_check = false
   tags = {
     Name = "fw_inside_interface"
@@ -455,7 +455,7 @@ resource "aws_network_interface" "fw_inside" {
 resource "aws_network_interface" "fw_outside" {
   subnet_id         = aws_subnet.fw_outside.id
   security_groups   = [aws_security_group.firewall.id]
-  private_ips       = ["10.0.12.10"]
+  private_ips       = ["10.${var.supernet_index}.0.138/26"]
   source_dest_check = false
   tags = {
     Name = "fw_outside_interface"
@@ -465,7 +465,7 @@ resource "aws_network_interface" "fw_outside" {
 resource "aws_network_interface" "fw_heartbeat" {
   security_groups   = [aws_security_group.firewall.id]
   subnet_id         = aws_subnet.fw_heartbeat.id
-  private_ips       = ["10.0.13.10"]
+  private_ips       = ["10.${var.supernet_index}.0.202/26"]
   source_dest_check = false
   tags = {
     Name = "fw_heartbeat_interface"
@@ -477,7 +477,7 @@ resource "aws_eip" "fw_outside" {
     Name = "fw_outside_eip"
   }
   depends_on                = [aws_instance.fortigate]
-  associate_with_private_ip = "10.0.12.10"
+  associate_with_private_ip = aws_network_interface.fw_outside.private_ip
   network_border_group      = var.region_aws
   vpc                       = true
   public_ipv4_pool          = "amazon"
