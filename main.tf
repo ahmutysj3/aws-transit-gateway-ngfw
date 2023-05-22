@@ -571,19 +571,19 @@ resource "aws_flow_log" "cloud_watch_firewall_vpc" {
   vpc_id          = aws_vpc.firewall_vpc.id
 }
 
-resource "aws_flow_log" "cloud_watch_spoke_a_vpc" {
+resource "aws_flow_log" "cloud_watch_spoke_vpc_a" {
   count           = 1
   iam_role_arn    = aws_iam_role.flow_logs.arn
   log_destination = aws_cloudwatch_log_group.flow_logs.arn
   traffic_type    = "ALL"
-  vpc_id          = aws_vpc.spoke_a_vpc.id
+  vpc_id          = aws_vpc.spoke_vpc_a.id
 }
 
-resource "aws_flow_log" "cloud_watch_spoke_b_vpc" {
+resource "aws_flow_log" "cloud_watch_spoke_vpc_b" {
   count           = 1
   iam_role_arn    = aws_iam_role.flow_logs.arn
   log_destination = aws_cloudwatch_log_group.flow_logs.arn
   traffic_type    = "ALL"
-  vpc_id          = aws_vpc.spoke_b_vpc.id
+  vpc_id          = aws_vpc.spoke_vpc_b.id
 }
 
