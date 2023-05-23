@@ -434,7 +434,7 @@ resource "aws_instance" "fortigate" {
 resource "aws_network_interface" "fw_mgmt" {
   subnet_id         = aws_subnet.fw_mgmt.id
   security_groups   = [aws_security_group.firewall.id]
-  private_ips       = ["10.${var.supernet_index}.10.10"]
+  private_ips       = [cidrhost(aws_subnet.fw_mgmt.cidr_block,10)]
   source_dest_check = false
 
   tags = {
@@ -445,7 +445,7 @@ resource "aws_network_interface" "fw_mgmt" {
 resource "aws_network_interface" "fw_inside" {
   subnet_id         = aws_subnet.fw_inside.id
   security_groups   = [aws_security_group.firewall.id]
-  private_ips       = ["10.${var.supernet_index}.0.74/26"]
+  private_ips       = [cidrhost(aws_subnet.fw_inside.cidr_block,10)]
   source_dest_check = false
   tags = {
     Name = "fw_inside_interface"
@@ -455,7 +455,7 @@ resource "aws_network_interface" "fw_inside" {
 resource "aws_network_interface" "fw_outside" {
   subnet_id         = aws_subnet.fw_outside.id
   security_groups   = [aws_security_group.firewall.id]
-  private_ips       = ["10.${var.supernet_index}.0.138/26"]
+  private_ips       = [cidrhost(aws_subnet.fw_outside.cidr_block,10)]
   source_dest_check = false
   tags = {
     Name = "fw_outside_interface"
@@ -465,7 +465,7 @@ resource "aws_network_interface" "fw_outside" {
 resource "aws_network_interface" "fw_heartbeat" {
   security_groups   = [aws_security_group.firewall.id]
   subnet_id         = aws_subnet.fw_heartbeat.id
-  private_ips       = ["10.${var.supernet_index}.0.202/26"]
+  private_ips       = [cidrhost(aws_subnet.fw_heartbeat.cidr_block,10)]
   source_dest_check = false
   tags = {
     Name = "fw_heartbeat_interface"
