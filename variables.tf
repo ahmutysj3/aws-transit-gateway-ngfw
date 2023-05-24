@@ -17,7 +17,7 @@ variable "network_prefix" {
 }
 
 variable "supernet_cidr" {
-  description = "cidr block for entire datacenter, should be /16"
+  description = "cidr block for entire datacenter, must be /16"
   type        = string
   default     = "10.200.0.0/16"
 }
