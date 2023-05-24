@@ -1,6 +1,7 @@
 # Security VPC
 resource "aws_vpc" "firewall_vpc" {
-  cidr_block = "10.${var.supernet_index}.0.0/23"
+  depends_on = [aws_cloudwatch_log_group.flow_logs]
+  cidr_block = var.firewall_vpc_cidr
 
   tags = {
     Name = "firewall_vpc"
@@ -9,7 +10,7 @@ resource "aws_vpc" "firewall_vpc" {
 
 # Spoke VPCs
 resource "aws_vpc" "spoke_vpc_a" {
-  cidr_block = "10.${var.supernet_index}.129.0/24"
+  cidr_block = var.spoke_vpc_a_cidr
 
   tags = {
     Name = "spoke_vpc_a"
@@ -17,7 +18,7 @@ resource "aws_vpc" "spoke_vpc_a" {
 }
 
 resource "aws_vpc" "spoke_vpc_b" {
-  cidr_block = "10.${var.supernet_index}.130.0/24"
+  cidr_block = var.spoke_vpc_b_cidr
 
   tags = {
     Name = "spoke_vpc_b"
@@ -64,7 +65,7 @@ resource "aws_security_group" "firewall" {
 # VPC A Private Subnet
 resource "aws_subnet" "spoke_a_subnet" {
   vpc_id                  = aws_vpc.spoke_vpc_a.id
-  cidr_block              = cidrsubnet(aws_vpc.spoke_vpc_a.cidr_block,1,1)
+  cidr_block              = cidrsubnet(aws_vpc.spoke_vpc_a.cidr_block, 1, 1)
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
 
@@ -76,7 +77,7 @@ resource "aws_subnet" "spoke_a_subnet" {
 # VPC B Private Subnet
 resource "aws_subnet" "spoke_b_subnet" {
   vpc_id                  = aws_vpc.spoke_vpc_b.id
-  cidr_block              = cidrsubnet(aws_vpc.spoke_vpc_b.cidr_block,1,1)
+  cidr_block              = cidrsubnet(aws_vpc.spoke_vpc_b.cidr_block, 1, 1)
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[1]
 
@@ -130,7 +131,7 @@ resource "aws_route" "spoke_b" {
 # Firewall Subnets - Primary AZ
 resource "aws_subnet" "fw_mgmt" {
   vpc_id                  = aws_vpc.firewall_vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block,3,0)
+  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 3, 0)
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
 
@@ -141,7 +142,7 @@ resource "aws_subnet" "fw_mgmt" {
 
 resource "aws_subnet" "fw_inside" {
   vpc_id                  = aws_vpc.firewall_vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block,3,1)
+  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 3, 1)
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
 
@@ -153,7 +154,7 @@ resource "aws_subnet" "fw_inside" {
 
 resource "aws_subnet" "fw_outside" {
   vpc_id                  = aws_vpc.firewall_vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block,3,2)
+  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 3, 2)
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[0]
   depends_on              = [aws_internet_gateway.main]
@@ -166,7 +167,7 @@ resource "aws_subnet" "fw_outside" {
 
 resource "aws_subnet" "fw_heartbeat" {
   vpc_id                  = aws_vpc.firewall_vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block,3,3)
+  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 3, 3)
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
 
@@ -178,7 +179,7 @@ resource "aws_subnet" "fw_heartbeat" {
 
 resource "aws_subnet" "tgw" {
   vpc_id                  = aws_vpc.firewall_vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block,1,1)
+  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 1, 1)
   map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
 
@@ -434,7 +435,7 @@ resource "aws_instance" "fortigate" {
 resource "aws_network_interface" "fw_mgmt" {
   subnet_id         = aws_subnet.fw_mgmt.id
   security_groups   = [aws_security_group.firewall.id]
-  private_ips       = [cidrhost(aws_subnet.fw_mgmt.cidr_block,10)]
+  private_ips       = [cidrhost(aws_subnet.fw_mgmt.cidr_block, 10)]
   source_dest_check = false
 
   tags = {
@@ -445,7 +446,7 @@ resource "aws_network_interface" "fw_mgmt" {
 resource "aws_network_interface" "fw_inside" {
   subnet_id         = aws_subnet.fw_inside.id
   security_groups   = [aws_security_group.firewall.id]
-  private_ips       = [cidrhost(aws_subnet.fw_inside.cidr_block,10)]
+  private_ips       = [cidrhost(aws_subnet.fw_inside.cidr_block, 10)]
   source_dest_check = false
   tags = {
     Name = "fw_inside_interface"
@@ -455,7 +456,7 @@ resource "aws_network_interface" "fw_inside" {
 resource "aws_network_interface" "fw_outside" {
   subnet_id         = aws_subnet.fw_outside.id
   security_groups   = [aws_security_group.firewall.id]
-  private_ips       = [cidrhost(aws_subnet.fw_outside.cidr_block,10)]
+  private_ips       = [cidrhost(aws_subnet.fw_outside.cidr_block, 10)]
   source_dest_check = false
   tags = {
     Name = "fw_outside_interface"
@@ -465,7 +466,7 @@ resource "aws_network_interface" "fw_outside" {
 resource "aws_network_interface" "fw_heartbeat" {
   security_groups   = [aws_security_group.firewall.id]
   subnet_id         = aws_subnet.fw_heartbeat.id
-  private_ips       = [cidrhost(aws_subnet.fw_heartbeat.cidr_block,10)]
+  private_ips       = [cidrhost(aws_subnet.fw_heartbeat.cidr_block, 10)]
   source_dest_check = false
   tags = {
     Name = "fw_heartbeat_interface"
@@ -485,7 +486,7 @@ resource "aws_eip" "fw_outside" {
 }
 
 resource "aws_s3_bucket" "flow_logs" {
-  count = 1
+  count         = 1
   bucket        = "${var.network_prefix}-vpc-flow-logs"
   force_destroy = true
 

@@ -18,5 +18,31 @@ variable "network_prefix" {
 
 variable "supernet_index" {
   description = "this value will be used in second octet for network cidrs"
-  default = "251"
+  type        = string
+  default     = "251"
+}
+
+variable "firewall_vpc_cidr" {
+  description = "cidr block for firewall vpc, must be at least /23"
+  type        = string
+  default     = "10.251.254.0/23"
+}
+
+variable "spoke_vpc_a_cidr" {
+  description = "cidr block for firewall vpc, must be at least /23"
+  type        = string
+  default     = "10.251.0.0/23"
+}
+
+variable "spoke_vpc_b_cidr" {
+  description = "cidr block for firewall vpc, must be at least /23"
+  type        = string
+  default     = "10.251.2.0/23"
+}
+
+
+variable "supernet_cidr" {
+  description = "cidr block for entire datacenter, should be /16"
+  type        = string
+  default     = "10.200.0.0/16"
 }
