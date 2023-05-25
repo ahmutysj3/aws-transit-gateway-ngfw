@@ -21,3 +21,11 @@ variable "supernet_cidr" {
   type        = string
   default     = "10.200.0.0/16"
 }
+
+variable "spoke_vpc_params" {
+  description = "parameters for spoke VPCs"
+  type = map(object({
+    cidr_block = string
+    subnets    = list(string)
+  }))
+}
