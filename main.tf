@@ -94,14 +94,9 @@ resource "aws_route_table_association" "spoke" {
   route_table_id = aws_route_table.spoke[lookup(local.subnet_to_vpc_map,each.key)].id
 }
 
-/* resource "aws_route" "spoke_a" {
-  route_table_id         = aws_route_table.spoke_a_subnet.id
-  destination_cidr_block = "0.0.0.0/0"
-  transit_gateway_id     = aws_ec2_transit_gateway.main.id
-}
-
-resource "aws_route" "spoke_b" {
-  route_table_id         = aws_route_table.spoke_b_subnet.id
+resource "aws_route" "spoke" {
+  for_each = aws_route_table.spoke
+  route_table_id         = each.value.id
   destination_cidr_block = "0.0.0.0/0"
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
 }
@@ -167,7 +162,6 @@ resource "aws_subnet" "tgw" {
   }
 }
 
-
 # firewall Route Tables
 resource "aws_route_table" "fw_internal" {
   vpc_id = aws_vpc.firewall_vpc.id
@@ -230,15 +224,10 @@ resource "aws_route" "fw_external_inet" {
   gateway_id             = aws_internet_gateway.main.id
 }
 
-resource "aws_route" "fw_external_spoke_a" {
+resource "aws_route" "fw_external_spoke" {
+  for_each = aws_vpc.spoke
   route_table_id         = aws_route_table.fw_external.id
-  destination_cidr_block = aws_vpc.spoke_vpc_a.cidr_block
-  transit_gateway_id     = aws_ec2_transit_gateway.main.id
-}
-
-resource "aws_route" "fw_external_spoke_b" {
-  route_table_id         = aws_route_table.fw_external.id
-  destination_cidr_block = aws_vpc.spoke_vpc_b.cidr_block
+  destination_cidr_block = each.value.cidr_block
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
 }
 
@@ -250,18 +239,12 @@ resource "aws_route" "fw_internal_all" {
 }
 
 # Firewall TGW Route Table Routes
-resource "aws_route" "tgw_spoke_a" {
+resource "aws_route" "tgw_spoke" {
+  for_each = aws_vpc.spoke
   route_table_id         = aws_route_table.fw_tgw.id
-  destination_cidr_block = aws_vpc.spoke_vpc_a.cidr_block
+  destination_cidr_block = each.value.cidr_block
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
 }
-
-resource "aws_route" "tgw_spoke_b" {
-  route_table_id         = aws_route_table.fw_tgw.id
-  destination_cidr_block = aws_vpc.spoke_vpc_b.cidr_block
-  transit_gateway_id     = aws_ec2_transit_gateway.main.id
-}
-
 
 # Transit Gateway
 resource "aws_ec2_transit_gateway" "main" {
@@ -280,20 +263,13 @@ resource "aws_ec2_transit_gateway" "main" {
 }
 
 # Transit Gateway VPC Attachments
-resource "aws_ec2_transit_gateway_vpc_attachment" "spoke_a" {
+resource "aws_ec2_transit_gateway_vpc_attachment" "spoke" {
+for_each = aws_vpc.spoke
   transit_gateway_default_route_table_association = false
   transit_gateway_default_route_table_propagation = false
-  subnet_ids                                      = [aws_subnet.spoke_a_subnet.id]
+  subnet_ids                                      = [for k in aws_subnet.spoke : k.id]
   transit_gateway_id                              = aws_ec2_transit_gateway.main.id
-  vpc_id                                          = aws_vpc.spoke_vpc_a.id
-}
-
-resource "aws_ec2_transit_gateway_vpc_attachment" "spoke_b" {
-  transit_gateway_default_route_table_association = false
-  transit_gateway_default_route_table_propagation = false
-  subnet_ids                                      = [aws_subnet.spoke_b_subnet.id]
-  transit_gateway_id                              = aws_ec2_transit_gateway.main.id
-  vpc_id                                          = aws_vpc.spoke_vpc_b.id
+  vpc_id                                          = each.value.id
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "firewall" {
@@ -326,14 +302,9 @@ resource "aws_ec2_transit_gateway_route" "spoke_to_firewall" {
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.firewall.id
 }
 
-resource "aws_ec2_transit_gateway_route" "spoke_a_null_route" {
-  destination_cidr_block         = aws_subnet.spoke_a_subnet.cidr_block
-  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
-  blackhole                      = true
-}
-
-resource "aws_ec2_transit_gateway_route" "spoke_b_null_route" {
-  destination_cidr_block         = aws_subnet.spoke_b_subnet.cidr_block
+resource "aws_ec2_transit_gateway_route" "spoke_null_route" {
+  for_each = aws_vpc.spoke
+  destination_cidr_block         = each.value.cidr_block
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
   blackhole                      = true
 }
@@ -345,26 +316,18 @@ resource "aws_ec2_transit_gateway_route" "fw_outside_null_route" {
 }
 
 
-resource "aws_ec2_transit_gateway_route" "firewall_to_spoke_a" {
-  destination_cidr_block         = aws_subnet.spoke_a_subnet.cidr_block
+resource "aws_ec2_transit_gateway_route" "firewall_to_spoke_subnets" {
+    for_each = aws_subnet.spoke
+  destination_cidr_block         = each.value.cidr_block
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.firewall.id
-  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke_a.id
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke[lookup(local.subnet_to_vpc_map,each.key)].id
 }
 
-resource "aws_ec2_transit_gateway_route" "firewall_to_spoke_b" {
-  destination_cidr_block         = aws_subnet.spoke_b_subnet.cidr_block
-  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.firewall.id
-  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke_b.id
-}
 
 # Transit Gateway Route Table Associations
-resource "aws_ec2_transit_gateway_route_table_association" "spoke_a" {
-  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke_a.id
-  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
-}
-
-resource "aws_ec2_transit_gateway_route_table_association" "spoke_b" {
-  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke_b.id
+resource "aws_ec2_transit_gateway_route_table_association" "spoke" {
+    for_each = aws_vpc.spoke
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke[each.key].id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
 }
 
@@ -476,20 +439,12 @@ resource "aws_s3_bucket" "flow_logs" {
   }
 }
 
-resource "aws_flow_log" "spoke_vpc_a" {
-  count                = 1
+resource "aws_flow_log" "spoke" {
+  for_each = aws_vpc.spoke
   log_destination      = aws_s3_bucket.flow_logs[0].arn
   log_destination_type = "s3"
   traffic_type         = "ALL"
-  vpc_id               = aws_vpc.spoke_vpc_a.id
-}
-
-resource "aws_flow_log" "spoke_vpc_b" {
-  count                = 1
-  log_destination      = aws_s3_bucket.flow_logs[0].arn
-  log_destination_type = "s3"
-  traffic_type         = "ALL"
-  vpc_id               = aws_vpc.spoke_vpc_b.id
+  vpc_id               = each.value.id
 }
 
 resource "aws_flow_log" "firewall_vpc" {
@@ -552,20 +507,10 @@ resource "aws_flow_log" "cloud_watch_firewall_vpc" {
   vpc_id          = aws_vpc.firewall_vpc.id
 }
 
-resource "aws_flow_log" "cloud_watch_spoke_vpc_a" {
-  count           = 1
+resource "aws_flow_log" "cloud_watch_spoke" {
+  for_each = aws_vpc.spoke
   iam_role_arn    = aws_iam_role.flow_logs.arn
   log_destination = aws_cloudwatch_log_group.flow_logs.arn
   traffic_type    = "ALL"
-  vpc_id          = aws_vpc.spoke_vpc_a.id
+  vpc_id          = each.value.id
 }
-
-resource "aws_flow_log" "cloud_watch_spoke_vpc_b" {
-  count           = 1
-  iam_role_arn    = aws_iam_role.flow_logs.arn
-  log_destination = aws_cloudwatch_log_group.flow_logs.arn
-  traffic_type    = "ALL"
-  vpc_id          = aws_vpc.spoke_vpc_b.id
-}
-
- */
