@@ -69,7 +69,7 @@ resource "aws_subnet" "spoke" {
   cidr_block = cidrsubnet(aws_vpc.spoke[each.value].cidr_block, 24 - element(split("/",aws_vpc.spoke[each.value].cidr_block),1),lookup(zipmap(lookup(local.vpc_subnet_map,each.value),range(length(lookup(local.vpc_subnet_map,each.value)))),each.key))
   vpc_id = aws_vpc.spoke[each.value].id
   map_public_ip_on_launch = true
-  availability_zone = data.aws_availability_zones.available.names[1]
+  availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
     Name = "${each.key}_subnet"
@@ -226,25 +226,25 @@ resource "aws_route" "fw_external_inet" {
 
 
 # Firewall Internal Route Table Routes
-resource "aws_route" "fw_internal_all" {
+ resource "aws_route" "fw_internal_all" {
   depends_on = [ aws_ec2_transit_gateway.main ]
   route_table_id         = aws_route_table.fw_internal.id
   destination_cidr_block = "0.0.0.0/0"
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
 }
-
+/*
 # Firewall TGW Route Table Routes
 resource "aws_route" "tgw_spoke" {
-  depends_on = [ aws_ec2_transit_gateway.main ]
-  for_each = aws_vpc.spoke
+depends_on = [ aws_ec2_transit_gateway.main ]
+  for_each = var.spoke_vpc_params
   route_table_id         = aws_route_table.fw_tgw.id
   destination_cidr_block = each.value.cidr_block
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
-}
+} */
 
 # Transit Gateway
 resource "aws_ec2_transit_gateway" "main" {
-  depends_on = [ aws_vpc.firewall_vpc ]
+  depends_on = [ aws_internet_gateway.main ]
   description                     = "Main Transit Gateway"
   amazon_side_asn                 = 64512
   auto_accept_shared_attachments  = "enable"
@@ -259,20 +259,13 @@ resource "aws_ec2_transit_gateway" "main" {
   }
 }
 
-resource "aws_ec2_transit_gateway_vpc_attachment" "spoke" {
-  vpc_id = aws_vpc.spoke["protected"].id
-  transit_gateway_id = aws_ec2_transit_gateway.main.id
-  subnet_ids = [aws_subnet.spoke["vault"].id]
-  transit_gateway_default_route_table_association = false
-  transit_gateway_default_route_table_propagation = false
-}
-/*
+
 # Transit Gateway VPC Attachments
 resource "aws_ec2_transit_gateway_vpc_attachment" "spoke" {
 for_each = aws_vpc.spoke
   transit_gateway_default_route_table_association = false
   transit_gateway_default_route_table_propagation = false
-  subnet_ids                                      = [flatten(data.aws_subnets.spoke_vpc[each.key].ids)]
+  subnet_ids                                      = flatten(data.aws_subnets.spoke_vpc[each.key].ids)
   transit_gateway_id                              = aws_ec2_transit_gateway.main.id
   vpc_id                                          = each.value.id
 }
@@ -284,7 +277,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "firewall" {
   transit_gateway_id                              = aws_ec2_transit_gateway.main.id
   vpc_id                                          = aws_vpc.firewall_vpc.id
 }
-
+/*
 # Transit Gateway Route Tables
 resource "aws_ec2_transit_gateway_route_table" "spoke" {
   transit_gateway_id = aws_ec2_transit_gateway.main.id
