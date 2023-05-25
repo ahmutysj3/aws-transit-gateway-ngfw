@@ -263,6 +263,7 @@ resource "aws_ec2_transit_gateway" "main" {
 # Transit Gateway VPC Attachments
 resource "aws_ec2_transit_gateway_vpc_attachment" "spoke" {
 for_each = aws_vpc.spoke
+appliance_mode_support = "enable"
   transit_gateway_default_route_table_association = false
   transit_gateway_default_route_table_propagation = false
   subnet_ids                                      = flatten(data.aws_subnets.spoke_vpc[each.key].ids)
@@ -271,6 +272,7 @@ for_each = aws_vpc.spoke
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "firewall" {
+  appliance_mode_support = "enable"
   transit_gateway_default_route_table_association = false
   transit_gateway_default_route_table_propagation = false
   subnet_ids                                      = [aws_subnet.tgw.id]
