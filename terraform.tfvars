@@ -3,7 +3,7 @@ spoke_vpc_params = {
     cidr_block = "10.200.0.0/20"
     subnets    = ["api", "sftp"]
     s3_logs = true
-    cloudwatch = true
+    cloudwatch = false
   }
   dmz = {
     cidr_block = "10.200.16.0/20"
@@ -21,6 +21,6 @@ spoke_vpc_params = {
     cidr_block = "10.200.48.0/20"
     subnets    = ["monitor", "logging", "admin"]
     s3_logs = true
-    cloudwatch = true
+    cloudwatch = false
   }
 }
