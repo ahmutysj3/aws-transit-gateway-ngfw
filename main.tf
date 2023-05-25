@@ -55,21 +55,19 @@ resource "aws_security_group" "firewall" {
 }
 
 locals {
-  vpc_subnet_map =  {for k, v in var.spoke_vpc_params : k => v.subnets}
-  vpc_subnet_count = {for k, v in var.spoke_vpc_params : k => length(v.subnets)}
-  values_list = flatten(values(transpose(local.vpc_subnet_map)))
-  keys_list = keys(transpose(local.vpc_subnet_map))
-  
-  subnet_to_vpc_map = zipmap(local.keys_list,local.values_list)
-  test_ip = "10.0.0.0/24"
+  vpc_subnet_map        = { for k, v in var.spoke_vpc_params : k => v.subnets }
+  vpc_subnet_map_values = flatten(values(transpose(local.vpc_subnet_map)))
+  vpc_subnet_map_keys   = keys(transpose(local.vpc_subnet_map))
+  subnet_to_vpc_map     = zipmap(local.vpc_subnet_map_keys, local.vpc_subnet_map_values)
 }
+
 # Spoke Subnets
 resource "aws_subnet" "spoke" {
-  for_each = local.subnet_to_vpc_map
-  cidr_block = cidrsubnet(aws_vpc.spoke[each.value].cidr_block, 24 - element(split("/",aws_vpc.spoke[each.value].cidr_block),1),lookup(zipmap(lookup(local.vpc_subnet_map,each.value),range(length(lookup(local.vpc_subnet_map,each.value)))),each.key))
-  vpc_id = aws_vpc.spoke[each.value].id
+  for_each                = local.subnet_to_vpc_map
+  cidr_block              = cidrsubnet(aws_vpc.spoke[each.value].cidr_block, 24 - element(split("/", aws_vpc.spoke[each.value].cidr_block), 1), lookup(zipmap(lookup(local.vpc_subnet_map, each.value), range(length(lookup(local.vpc_subnet_map, each.value)))), each.key))
+  vpc_id                  = aws_vpc.spoke[each.value].id
   map_public_ip_on_launch = true
-  availability_zone = data.aws_availability_zones.available.names[0]
+  availability_zone       = data.aws_availability_zones.available.names[0]
 
   tags = {
     Name = "${each.key}_subnet"
@@ -79,7 +77,7 @@ resource "aws_subnet" "spoke" {
 # Spoke VPC Route Tables
 resource "aws_route_table" "spoke" {
   for_each = aws_vpc.spoke
-  vpc_id = each.value.id
+  vpc_id   = each.value.id
 
   tags = {
     Name = "${each.key}_route_table"
@@ -88,9 +86,9 @@ resource "aws_route_table" "spoke" {
 
 # Subnet Route Table Associations
 resource "aws_route_table_association" "spoke" {
-    for_each = aws_subnet.spoke
+  for_each       = aws_subnet.spoke
   subnet_id      = each.value.id
-  route_table_id = aws_route_table.spoke[lookup(local.subnet_to_vpc_map,each.key)].id
+  route_table_id = aws_route_table.spoke[lookup(local.subnet_to_vpc_map, each.key)].id
 }
 
 /* resource "aws_route" "spoke" {
@@ -226,25 +224,25 @@ resource "aws_route" "fw_external_inet" {
 
 
 # Firewall Internal Route Table Routes
- resource "aws_route" "fw_internal_all" {
-  depends_on = [ aws_ec2_transit_gateway.main ]
+resource "aws_route" "fw_internal_all" {
+  depends_on             = [aws_ec2_transit_gateway.main]
   route_table_id         = aws_route_table.fw_internal.id
   destination_cidr_block = "0.0.0.0/0"
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
 }
-/*
+
 # Firewall TGW Route Table Routes
 resource "aws_route" "tgw_spoke" {
-depends_on = [ aws_ec2_transit_gateway.main ]
-  for_each = var.spoke_vpc_params
+  depends_on             = [aws_ec2_transit_gateway.main]
+  for_each               = var.spoke_vpc_params
   route_table_id         = aws_route_table.fw_tgw.id
   destination_cidr_block = each.value.cidr_block
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
-} */
+}
 
 # Transit Gateway
 resource "aws_ec2_transit_gateway" "main" {
-  depends_on = [ aws_internet_gateway.main ]
+  depends_on                      = [aws_internet_gateway.main]
   description                     = "Main Transit Gateway"
   amazon_side_asn                 = 64512
   auto_accept_shared_attachments  = "enable"
@@ -262,24 +260,24 @@ resource "aws_ec2_transit_gateway" "main" {
 
 # Transit Gateway VPC Attachments
 resource "aws_ec2_transit_gateway_vpc_attachment" "spoke" {
-for_each = aws_vpc.spoke
-appliance_mode_support = "enable"
+  for_each                                        = aws_vpc.spoke
+  appliance_mode_support                          = "enable"
   transit_gateway_default_route_table_association = false
   transit_gateway_default_route_table_propagation = false
-  subnet_ids                                      = flatten(data.aws_subnets.spoke_vpc[each.key].ids)
+  subnet_ids                                      = [element(flatten(data.aws_subnets.spoke_vpc[each.key].ids), 0)]
   transit_gateway_id                              = aws_ec2_transit_gateway.main.id
   vpc_id                                          = each.value.id
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "firewall" {
-  appliance_mode_support = "enable"
+  appliance_mode_support                          = "enable"
   transit_gateway_default_route_table_association = false
   transit_gateway_default_route_table_propagation = false
   subnet_ids                                      = [aws_subnet.tgw.id]
   transit_gateway_id                              = aws_ec2_transit_gateway.main.id
   vpc_id                                          = aws_vpc.firewall_vpc.id
 }
-/*
+
 # Transit Gateway Route Tables
 resource "aws_ec2_transit_gateway_route_table" "spoke" {
   transit_gateway_id = aws_ec2_transit_gateway.main.id
@@ -303,7 +301,7 @@ resource "aws_ec2_transit_gateway_route" "spoke_to_firewall" {
 }
 
 resource "aws_ec2_transit_gateway_route" "spoke_null_route" {
-  for_each = aws_vpc.spoke
+  for_each                       = aws_vpc.spoke
   destination_cidr_block         = each.value.cidr_block
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
   blackhole                      = true
@@ -317,7 +315,7 @@ resource "aws_ec2_transit_gateway_route" "fw_outside_null_route" {
 
 
 resource "aws_ec2_transit_gateway_route" "firewall_to_spoke_subnets" {
-    for_each = aws_vpc.spoke
+  for_each                       = aws_vpc.spoke
   destination_cidr_block         = each.value.cidr_block
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.firewall.id
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke[each.key].id
@@ -326,7 +324,7 @@ resource "aws_ec2_transit_gateway_route" "firewall_to_spoke_subnets" {
 
 # Transit Gateway Route Table Associations
 resource "aws_ec2_transit_gateway_route_table_association" "spoke" {
-    for_each = aws_vpc.spoke
+  for_each                       = aws_vpc.spoke
   transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke[each.key].id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
 }
@@ -440,7 +438,7 @@ resource "aws_s3_bucket" "flow_logs" {
 }
 
 resource "aws_flow_log" "spoke" {
-  for_each = aws_vpc.spoke
+  for_each             = aws_vpc.spoke
   log_destination      = aws_s3_bucket.flow_logs[0].arn
   log_destination_type = "s3"
   traffic_type         = "ALL"
@@ -508,10 +506,9 @@ resource "aws_flow_log" "cloud_watch_firewall_vpc" {
 }
 
 resource "aws_flow_log" "cloud_watch_spoke" {
-  for_each = aws_vpc.spoke
+  for_each        = aws_vpc.spoke
   iam_role_arn    = aws_iam_role.flow_logs.arn
   log_destination = aws_cloudwatch_log_group.flow_logs.arn
   traffic_type    = "ALL"
   vpc_id          = each.value.id
 }
-*/
