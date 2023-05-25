@@ -94,12 +94,13 @@ resource "aws_route_table_association" "spoke" {
   route_table_id = aws_route_table.spoke[lookup(local.subnet_to_vpc_map,each.key)].id
 }
 
-resource "aws_route" "spoke" {
+/* resource "aws_route" "spoke" {
+    depends_on = [ aws_ec2_transit_gateway.main ]
   for_each = aws_route_table.spoke
   route_table_id         = each.value.id
   destination_cidr_block = "0.0.0.0/0"
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
-}
+} */
 
 
 # Firewall Subnets - Primary AZ
@@ -264,12 +265,12 @@ resource "aws_ec2_transit_gateway" "main" {
 
 # Transit Gateway VPC Attachments
 resource "aws_ec2_transit_gateway_vpc_attachment" "spoke" {
-for_each = aws_vpc.spoke
+for_each = aws_subnet.spoke
   transit_gateway_default_route_table_association = false
   transit_gateway_default_route_table_propagation = false
-  subnet_ids                                      = [for k in aws_subnet.spoke : k.id]
+  subnet_ids                                      = [each.value.id]
   transit_gateway_id                              = aws_ec2_transit_gateway.main.id
-  vpc_id                                          = each.value.id
+  vpc_id                                          = aws_vpc.spoke[lookup(local.subnet_to_vpc_map,each.key)].id
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "firewall" {
