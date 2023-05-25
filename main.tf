@@ -497,7 +497,7 @@ resource "aws_iam_role_policy" "flow_logs" {
 }
 
 resource "aws_flow_log" "cloud_watch_firewall_vpc" {
-  count           = 1
+  for_each = aws_vpc.firewall_vpc
   iam_role_arn    = aws_iam_role.flow_logs.arn
   log_destination = aws_cloudwatch_log_group.flow_logs.arn
   traffic_type    = "ALL"
@@ -505,9 +505,9 @@ resource "aws_flow_log" "cloud_watch_firewall_vpc" {
 }
 
 resource "aws_flow_log" "cloud_watch_spoke" {
-  for_each        = aws_vpc.spoke
+  for_each        = { for vpck, vpc in var.spoke_vpc_params : vpck => vpc if vpc.cloudwatch == true}
   iam_role_arn    = aws_iam_role.flow_logs.arn
   log_destination = aws_cloudwatch_log_group.flow_logs.arn
   traffic_type    = "ALL"
-  vpc_id          = each.value.id
+  vpc_id          = aws_vpc.spoke[each.key].id
 }
