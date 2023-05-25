@@ -27,5 +27,7 @@ variable "spoke_vpc_params" {
   type = map(object({
     cidr_block = string
     subnets    = list(string)
+    s3_logs = bool
+    cloudwatch = bool
   }))
 }
