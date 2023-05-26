@@ -68,7 +68,7 @@ resource "aws_iam_role_policy" "flow_logs" {
   policy = data.aws_iam_policy_document.flow_logs.json
 }
 
-resource "aws_flow_log" "cloud_watch_firewall_vpc" {
+resource "aws_flow_log" "cloud_watch_firewall" {
   iam_role_arn    = aws_iam_role.flow_logs.arn
   log_destination = aws_cloudwatch_log_group.flow_logs.arn
   traffic_type    = "ALL"
