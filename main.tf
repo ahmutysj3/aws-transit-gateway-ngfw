@@ -1,6 +1,5 @@
 # Security VPC
 resource "aws_vpc" "firewall_vpc" {
-  #depends_on = [aws_cloudwatch_log_group.flow_logs]
   cidr_block = cidrsubnet(var.supernet_cidr, 7, 127)
 
   tags = {
@@ -62,11 +61,11 @@ locals {
 }
 
 # Spoke Subnets
-resource "aws_subnet" "spoke" {
+resource "aws_subnet" "spoke" { # creates a /24 subnet for each entry in the subnets argument for var.spoke_vpc_params
   for_each                = local.subnet_to_vpc_map
   cidr_block              = cidrsubnet(aws_vpc.spoke[each.value].cidr_block, 24 - element(split("/", aws_vpc.spoke[each.value].cidr_block), 1), lookup(zipmap(lookup(local.vpc_subnet_map, each.value), range(length(lookup(local.vpc_subnet_map, each.value)))), each.key))
   vpc_id                  = aws_vpc.spoke[each.value].id
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
 
   tags = {
@@ -100,29 +99,18 @@ resource "aws_route" "spoke" {
 }
 
 locals {
-  firewall_subnets = [["outside","inside","mgmt","heartbeat"]]
+  firewall_subnets = [["outside","inside","mgmt","heartbeat","tgw"]]
 }
 
 resource "aws_subnet" "firewall" {
   for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
   vpc_id = aws_vpc.firewall_vpc.id
-  cidr_block = cidrsubnet(aws_vpc.firewall_vpc.cidr_block,3,each.value)
+  cidr_block = each.key == "tgw" ? cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 1, 1) : cidrsubnet(aws_vpc.firewall_vpc.cidr_block,3,each.value)
   map_public_ip_on_launch = false #each.key == "outside" ? true : false
   availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
     Name = "${var.network_prefix}_fw_${each.key}_subnet"
-  }
-}
-
-resource "aws_subnet" "tgw" {
-  vpc_id                  = aws_vpc.firewall_vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 1, 1)
-  map_public_ip_on_launch = false
-  availability_zone       = data.aws_availability_zones.available.names[0]
-
-  tags = {
-    Name = "tgw_subnet"
   }
 }
 
@@ -151,18 +139,11 @@ resource "aws_route_table" "fw_tgw" {
   }
 }
 
-# Firewall TGW Route Table Associations
-resource "aws_route_table_association" "fw_tgw" {
-  subnet_id      = aws_subnet.tgw.id
-  route_table_id = aws_route_table.fw_tgw.id
-}
-
-
 # Firewall External Route Table Associations
 resource "aws_route_table_association" "firewall" {
   for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
   subnet_id      = aws_subnet.firewall[each.key].id
-  route_table_id = each.key == "inside" || each.key == "heartbeat" ? aws_route_table.fw_internal.id : aws_route_table.fw_external.id
+  route_table_id = each.key == "tgw" ? aws_route_table.fw_tgw.id : each.key == "inside" || each.key == "heartbeat" ? aws_route_table.fw_internal.id : aws_route_table.fw_external.id
 }
 
 # Firewall External Route Table Routes
@@ -200,7 +181,7 @@ resource "aws_ec2_transit_gateway" "main" {
   multicast_support               = "disable"
   dns_support                     = "enable"
   vpn_ecmp_support                = "enable"
-  transit_gateway_cidr_blocks     = [aws_subnet.tgw.cidr_block]
+  transit_gateway_cidr_blocks     = [aws_subnet.firewall["tgw"].cidr_block]
   tags = {
     Name = "tgw_main"
   }
@@ -226,7 +207,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "firewall" {
   appliance_mode_support                          = "enable"
   transit_gateway_default_route_table_association = false
   transit_gateway_default_route_table_propagation = false
-  subnet_ids                                      = [aws_subnet.tgw.id]
+  subnet_ids                                      = [aws_subnet.firewall["tgw"].id]
   transit_gateway_id                              = aws_ec2_transit_gateway.main.id
   vpc_id                                          = aws_vpc.firewall_vpc.id
 
@@ -307,14 +288,9 @@ resource "aws_instance" "fortigate" {
     threads_per_core = 2
   }
   
-  /* network_interface {
-    device_index = 0
-    network_interface_id = aws_network_interface.firewall["outside"].id
-  } */
-
   dynamic "network_interface" {
     iterator = net_int 
-    for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
+    for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index if subnet != "tgw"}
 
     content {
       device_index = net_int.value
@@ -325,12 +301,11 @@ resource "aws_instance" "fortigate" {
 }
 
 resource "aws_network_interface" "firewall" {
-  for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
+  for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index if subnet != "tgw"}
   subnet_id = aws_subnet.firewall[each.key].id
   security_groups = [aws_security_group.firewall.id]
   source_dest_check = false
   
-
   tags = {
     Name = "${var.network_prefix}_fw_${each.key}_interface"
   }
