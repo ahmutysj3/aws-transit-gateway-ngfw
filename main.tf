@@ -91,62 +91,27 @@ resource "aws_route_table_association" "spoke" {
   route_table_id = aws_route_table.spoke[lookup(local.subnet_to_vpc_map, each.key)].id
 }
 
-/* resource "aws_route" "spoke" {
+resource "aws_route" "spoke" {
     depends_on = [ aws_ec2_transit_gateway.main ]
   for_each = aws_route_table.spoke
   route_table_id         = each.value.id
   destination_cidr_block = "0.0.0.0/0"
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
-} */
-
-
-# Firewall Subnets - Primary AZ
-resource "aws_subnet" "fw_mgmt" {
-  vpc_id                  = aws_vpc.firewall_vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 3, 0)
-  map_public_ip_on_launch = false
-  availability_zone       = data.aws_availability_zones.available.names[0]
-
-  tags = {
-    Name = "fw_mgmt_subnet"
-  }
 }
 
-resource "aws_subnet" "fw_inside" {
-  vpc_id                  = aws_vpc.firewall_vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 3, 1)
-  map_public_ip_on_launch = false
-  availability_zone       = data.aws_availability_zones.available.names[0]
-
+resource "aws_subnet" "firewall" {
+  for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
+  vpc_id = aws_vpc.firewall_vpc.id
+  cidr_block = cidrsubnet(aws_vpc.firewall_vpc.cidr_block,3,each.value)
+  map_public_ip_on_launch = each.key == outside ? true : false
+  availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
-    Name = "fw_inside_subnet"
+    Name = "${var.network_prefix}_fw_${each.key}_subnet"
   }
 }
-
-resource "aws_subnet" "fw_outside" {
-  vpc_id                  = aws_vpc.firewall_vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 3, 2)
-  map_public_ip_on_launch = true
-  availability_zone       = data.aws_availability_zones.available.names[0]
-  depends_on              = [aws_internet_gateway.main]
-
-
-  tags = {
-    Name = "fw_outside_subnet"
-  }
-}
-
-resource "aws_subnet" "fw_heartbeat" {
-  vpc_id                  = aws_vpc.firewall_vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 3, 3)
-  map_public_ip_on_launch = false
-  availability_zone       = data.aws_availability_zones.available.names[0]
-
-
-  tags = {
-    Name = "fw_heartbeat_subnet"
-  }
+locals {
+  firewall_subnets = [["outside","inside","mgmt","heartbeat"]]
 }
 
 resource "aws_subnet" "tgw" {
@@ -193,27 +158,11 @@ resource "aws_route_table_association" "fw_tgw" {
 
 
 # Firewall External Route Table Associations
-resource "aws_route_table_association" "fw_mgmt" {
-  subnet_id      = aws_subnet.fw_mgmt.id
-  route_table_id = aws_route_table.fw_external.id
+resource "aws_route_table_association" "firewall" {
+  for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
+  subnet_id      = aws_subnet.firewall[each.key].id
+  route_table_id = each.key == "inside" || "heartbeat" ? aws_route_table.fw_internal.id : aws_route_table.fw_external.id
 }
-
-resource "aws_route_table_association" "fw_outside" {
-  subnet_id      = aws_subnet.fw_outside.id
-  route_table_id = aws_route_table.fw_external.id
-}
-
-# Firewall Internal Route Table Associations
-resource "aws_route_table_association" "fw_inside" {
-  subnet_id      = aws_subnet.fw_inside.id
-  route_table_id = aws_route_table.fw_internal.id
-}
-
-resource "aws_route_table_association" "fw_heartbeat" {
-  subnet_id      = aws_subnet.fw_heartbeat.id
-  route_table_id = aws_route_table.fw_internal.id
-}
-
 
 # Firewall External Route Table Routes
 resource "aws_route" "fw_external_inet" {
@@ -221,7 +170,6 @@ resource "aws_route" "fw_external_inet" {
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.main.id
 }
-
 
 # Firewall Internal Route Table Routes
 resource "aws_route" "fw_internal_all" {
@@ -308,7 +256,8 @@ resource "aws_ec2_transit_gateway_route" "spoke_null_route" {
 }
 
 resource "aws_ec2_transit_gateway_route" "fw_outside_null_route" {
-  destination_cidr_block         = aws_subnet.fw_outside.cidr_block
+  for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index if subnet == "outside"}
+  destination_cidr_block         = aws_subnet.firewall[each.key].cidr_block
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.firewall.id
   blackhole                      = true
 }
@@ -350,80 +299,40 @@ resource "aws_instance" "fortigate" {
     core_count       = 2
     threads_per_core = 2
   }
+  dynamic "network_interface" {
+    for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
 
-  network_interface {
-    network_interface_id = aws_network_interface.fw_outside.id
-    device_index         = 0
-  }
-
-  network_interface {
-    network_interface_id = aws_network_interface.fw_inside.id
-    device_index         = 1
-  }
-
-  network_interface {
-    network_interface_id = aws_network_interface.fw_mgmt.id
-    device_index         = 2
-  }
-
-  network_interface {
-    network_interface_id = aws_network_interface.fw_heartbeat.id
-    device_index         = 3
+    content {
+      network_interface_id = aws_network_interface.firewall[each.key].id
+      device_index = each.value
+    }
   }
 
 }
 
-resource "aws_network_interface" "fw_mgmt" {
-  subnet_id         = aws_subnet.fw_mgmt.id
-  security_groups   = [aws_security_group.firewall.id]
-  private_ips       = [cidrhost(aws_subnet.fw_mgmt.cidr_block, 10)]
+resource "aws_network_interface" "firewall" {
+  for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
+  subnet_id = aws_subnet.firewall[each.key].id
+  security_groups = [aws_security_group.firewall.id]
+  private_ip = [cidrhost(aws_subnet.firewall[each.key].cidr_block,10)]
   source_dest_check = false
 
   tags = {
-    Name = "fw_mgmt_interface"
-  }
-}
-
-resource "aws_network_interface" "fw_inside" {
-  subnet_id         = aws_subnet.fw_inside.id
-  security_groups   = [aws_security_group.firewall.id]
-  private_ips       = [cidrhost(aws_subnet.fw_inside.cidr_block, 10)]
-  source_dest_check = false
-  tags = {
-    Name = "fw_inside_interface"
-  }
-}
-
-resource "aws_network_interface" "fw_outside" {
-  subnet_id         = aws_subnet.fw_outside.id
-  security_groups   = [aws_security_group.firewall.id]
-  private_ips       = [cidrhost(aws_subnet.fw_outside.cidr_block, 10)]
-  source_dest_check = false
-  tags = {
-    Name = "fw_outside_interface"
-  }
-}
-
-resource "aws_network_interface" "fw_heartbeat" {
-  security_groups   = [aws_security_group.firewall.id]
-  subnet_id         = aws_subnet.fw_heartbeat.id
-  private_ips       = [cidrhost(aws_subnet.fw_heartbeat.cidr_block, 10)]
-  source_dest_check = false
-  tags = {
-    Name = "fw_heartbeat_interface"
+    Name = "${var.network_prefix}_fw_${each.key}_interface"
   }
 }
 
 resource "aws_eip" "fw_outside" {
+  for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index if subnet == "outside"}
   tags = {
     Name = "fw_outside_eip"
   }
   depends_on                = [aws_instance.fortigate]
-  associate_with_private_ip = aws_network_interface.fw_outside.private_ip
+  associate_with_private_ip = aws_network_interface.firewall[each.key].private_ip
   network_border_group      = var.region_aws
   vpc                       = true
   public_ipv4_pool          = "amazon"
-  network_interface         = aws_network_interface.fw_outside.id
+  network_interface         = ws_network_interface.firewall[each.key].id
 }
 
 resource "aws_s3_bucket" "flow_logs" {
@@ -497,7 +406,6 @@ resource "aws_iam_role_policy" "flow_logs" {
 }
 
 resource "aws_flow_log" "cloud_watch_firewall_vpc" {
-  for_each = aws_vpc.firewall_vpc
   iam_role_arn    = aws_iam_role.flow_logs.arn
   log_destination = aws_cloudwatch_log_group.flow_logs.arn
   traffic_type    = "ALL"
