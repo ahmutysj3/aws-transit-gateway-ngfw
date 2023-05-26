@@ -16,7 +16,7 @@ resource "aws_flow_log" "spoke" {
   vpc_id               = aws_vpc.spoke[each.key].id # add datasource to pull this info from module call
 }
 
-resource "aws_flow_log" "firewall_vpc" {
+resource "aws_flow_log" "firewall" {
   log_destination      = aws_s3_bucket.flow_logs.arn
   log_destination_type = "s3"
   traffic_type         = "ALL"
