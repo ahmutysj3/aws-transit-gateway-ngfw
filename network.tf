@@ -132,21 +132,6 @@ resource "aws_route_table_association" "firewall" {
   route_table_id = aws_route_table.firewall[aws_subnet.firewall[each.key].tags.rt_table].id
 }
 
-# Firewall External Route Table Routes
-resource "aws_route" "fw_external_inet" {
-  route_table_id         = aws_route_table.firewall["external"].id
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.main.id
-}
-
-# Firewall Internal Route Table Routes
-resource "aws_route" "fw_internal_all" {
-  depends_on             = [aws_ec2_transit_gateway.main]
-  route_table_id         = aws_route_table.firewall["internal"].id
-  destination_cidr_block = "0.0.0.0/0"
-  transit_gateway_id     = aws_ec2_transit_gateway.main.id
-}
-
 # Firewall TGW Route Table Routes
 resource "aws_route" "tgw_spoke" {
   for_each               = var.spoke_vpc_params
@@ -154,4 +139,11 @@ resource "aws_route" "tgw_spoke" {
   route_table_id         = aws_route_table.firewall["tgw"].id
   destination_cidr_block = each.value.cidr_block
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
+}
+
+resource "aws_route" "firewall" {
+  for_each = toset(["internal","external"])
+  route_table_id = aws_route_table.firewall[each.key].id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id = each.key == "external" ? aws_internet_gateway.main.id : aws_ec2_transit_gateway.main.id
 }
