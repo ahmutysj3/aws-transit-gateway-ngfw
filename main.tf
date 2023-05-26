@@ -103,7 +103,7 @@ resource "aws_subnet" "firewall" {
   for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
   vpc_id = aws_vpc.firewall_vpc.id
   cidr_block = cidrsubnet(aws_vpc.firewall_vpc.cidr_block,3,each.value)
-  map_public_ip_on_launch = each.key == outside ? true : false
+  map_public_ip_on_launch = each.key == "outside" ? true : false
   availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
@@ -161,7 +161,7 @@ resource "aws_route_table_association" "fw_tgw" {
 resource "aws_route_table_association" "firewall" {
   for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
   subnet_id      = aws_subnet.firewall[each.key].id
-  route_table_id = each.key == "inside" || "heartbeat" ? aws_route_table.fw_internal.id : aws_route_table.fw_external.id
+  route_table_id = each.key == "inside" || each.key == "heartbeat" ? aws_route_table.fw_internal.id : aws_route_table.fw_external.id
 }
 
 # Firewall External Route Table Routes
@@ -300,11 +300,12 @@ resource "aws_instance" "fortigate" {
     threads_per_core = 2
   }
   dynamic "network_interface" {
+    iterator = fw_int
     for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
 
     content {
-      network_interface_id = aws_network_interface.firewall[each.key].id
-      device_index = each.value
+      network_interface_id = aws_network_interface.firewall[fw_int.key].id
+      device_index = fw_int.value
     }
   }
 
@@ -314,7 +315,7 @@ resource "aws_network_interface" "firewall" {
   for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
   subnet_id = aws_subnet.firewall[each.key].id
   security_groups = [aws_security_group.firewall.id]
-  private_ip = [cidrhost(aws_subnet.firewall[each.key].cidr_block,10)]
+  private_ip = cidrhost(aws_subnet.firewall[each.key].cidr_block,10)
   source_dest_check = false
 
   tags = {
@@ -332,7 +333,7 @@ resource "aws_eip" "fw_outside" {
   network_border_group      = var.region_aws
   vpc                       = true
   public_ipv4_pool          = "amazon"
-  network_interface         = ws_network_interface.firewall[each.key].id
+  network_interface         = aws_network_interface.firewall[each.key].id
 }
 
 resource "aws_s3_bucket" "flow_logs" {
