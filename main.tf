@@ -285,6 +285,7 @@ resource "aws_ec2_transit_gateway_route_table_association" "firewall" {
 }
 
 resource "aws_instance" "fortigate" {
+  depends_on = [ aws_network_interface.firewall ]
   tags = {
     Name = "fortigate_instance"
   }
@@ -316,7 +317,7 @@ resource "aws_network_interface" "firewall" {
   for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
   subnet_id = aws_subnet.firewall[each.key].id
   security_groups = [aws_security_group.firewall.id]
-  private_ip = cidrhost(aws_subnet.firewall[each.key].cidr_block,10)
+  #private_ip = cidrhost(aws_subnet.firewall[each.key].cidr_block,10)
   source_dest_check = false
 
   tags = {
@@ -329,8 +330,7 @@ resource "aws_eip" "fw_outside" {
   tags = {
     Name = "fw_outside_eip"
   }
-  depends_on                = [aws_instance.fortigate]
-  associate_with_private_ip = aws_network_interface.firewall[each.key].private_ip
+  #associate_with_private_ip = aws_network_interface.firewall[each.key].private_ip
   network_border_group      = var.region_aws
   vpc                       = true
   public_ipv4_pool          = "amazon"
