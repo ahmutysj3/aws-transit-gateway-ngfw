@@ -107,7 +107,7 @@ resource "aws_subnet" "firewall" {
   for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
   vpc_id = aws_vpc.firewall_vpc.id
   cidr_block = cidrsubnet(aws_vpc.firewall_vpc.cidr_block,3,each.value)
-  map_public_ip_on_launch = each.key == "outside" ? true : false
+  map_public_ip_on_launch = false #each.key == "outside" ? true : false
   availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
@@ -216,6 +216,10 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "spoke" {
   subnet_ids                                      = [element(flatten(data.aws_subnets.spoke_vpc[each.key].ids), 0)]
   transit_gateway_id                              = aws_ec2_transit_gateway.main.id
   vpc_id                                          = each.value.id
+
+  tags = {
+    Name = "${var.network_prefix}_tgw_${each.key}_attach"
+  }
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "firewall" {
@@ -225,6 +229,10 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "firewall" {
   subnet_ids                                      = [aws_subnet.tgw.id]
   transit_gateway_id                              = aws_ec2_transit_gateway.main.id
   vpc_id                                          = aws_vpc.firewall_vpc.id
+
+  tags = {
+    Name = "${var.network_prefix}_tgw_fw_attach"
+  }
 }
 
 # Transit Gateway Route Tables
@@ -285,7 +293,6 @@ resource "aws_ec2_transit_gateway_route_table_association" "firewall" {
 }
 
 resource "aws_instance" "fortigate" {
-  depends_on = [ aws_network_interface.firewall ]
   tags = {
     Name = "fortigate_instance"
   }
@@ -295,19 +302,23 @@ resource "aws_instance" "fortigate" {
   key_name          = var.ssh_key_name
   monitoring        = false
 
-
-
   cpu_options {
     core_count       = 2
     threads_per_core = 2
   }
+  
+  /* network_interface {
+    device_index = 0
+    network_interface_id = aws_network_interface.firewall["outside"].id
+  } */
+
   dynamic "network_interface" {
-    iterator = fw_int
+    iterator = net_int 
     for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
 
     content {
-      network_interface_id = aws_network_interface.firewall[fw_int.key].id
-      device_index = fw_int.value
+      device_index = net_int.value
+      network_interface_id = aws_network_interface.firewall[net_int.key].id
     }
   }
 
@@ -317,8 +328,8 @@ resource "aws_network_interface" "firewall" {
   for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
   subnet_id = aws_subnet.firewall[each.key].id
   security_groups = [aws_security_group.firewall.id]
-  #private_ip = cidrhost(aws_subnet.firewall[each.key].cidr_block,10)
   source_dest_check = false
+  
 
   tags = {
     Name = "${var.network_prefix}_fw_${each.key}_interface"
@@ -330,7 +341,7 @@ resource "aws_eip" "fw_outside" {
   tags = {
     Name = "fw_outside_eip"
   }
-  #associate_with_private_ip = aws_network_interface.firewall[each.key].private_ip
+  associate_with_private_ip = aws_network_interface.firewall[each.key].private_ip
   network_border_group      = var.region_aws
   vpc                       = true
   public_ipv4_pool          = "amazon"
