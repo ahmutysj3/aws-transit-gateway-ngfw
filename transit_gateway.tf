@@ -2,13 +2,13 @@
 resource "aws_ec2_transit_gateway" "main" {
   depends_on                      = [aws_internet_gateway.main]
   description                     = "Main Transit Gateway"
-  amazon_side_asn                 = 64512
-  auto_accept_shared_attachments  = "enable"
-  default_route_table_association = "disable"
-  default_route_table_propagation = "disable"
-  multicast_support               = "disable"
-  dns_support                     = "enable"
-  vpn_ecmp_support                = "enable"
+  amazon_side_asn                 = var.transit_gateway_defaults.amazon_side_asn
+  auto_accept_shared_attachments  = var.transit_gateway_defaults.auto_accept_shared_attachments
+  default_route_table_association = var.transit_gateway_defaults.default_route_table_association
+  default_route_table_propagation = var.transit_gateway_defaults.default_route_table_propagation
+  multicast_support               = var.transit_gateway_defaults.multicast_support
+  dns_support                     = var.transit_gateway_defaults.dns_support
+  vpn_ecmp_support                = var.transit_gateway_defaults.vpn_ecmp_support
   transit_gateway_cidr_blocks     = [aws_subnet.firewall["tgw"].cidr_block]
   tags = {
     Name = "tgw_main"
@@ -74,7 +74,7 @@ resource "aws_ec2_transit_gateway_route" "spoke_null_route" {
 }
 
 resource "aws_ec2_transit_gateway_route" "fw_outside_null_route" {
-  for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index if subnet == "outside"}
+  for_each                       = { for index, subnet in local.firewall_subnets[0] : subnet => index if subnet == "outside" }
   destination_cidr_block         = aws_subnet.firewall[each.key].cidr_block
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.firewall.id
   blackhole                      = true

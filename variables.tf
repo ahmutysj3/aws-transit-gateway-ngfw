@@ -27,7 +27,30 @@ variable "spoke_vpc_params" {
   type = map(object({
     cidr_block = string
     subnets    = list(string)
-    s3_logs = bool
+    s3_logs    = bool
     cloudwatch = bool
   }))
+}
+
+variable "transit_gateway_defaults" {
+  description = "values for the transit gateway default option values"
+  type = object({
+    amazon_side_asn                 = number
+    auto_accept_shared_attachments  = string
+    default_route_table_association = string
+    default_route_table_propagation = string
+    multicast_support               = string
+    dns_support                     = string
+    vpn_ecmp_support                = string
+  })
+
+  default = {
+    amazon_side_asn                 = 64512
+    auto_accept_shared_attachments  = "enable"
+    default_route_table_association = "disable"
+    default_route_table_propagation = "disable"
+    multicast_support               = "disable"
+    dns_support                     = "enable"
+    vpn_ecmp_support                = "enable"
+  }
 }

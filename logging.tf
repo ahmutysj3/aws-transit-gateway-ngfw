@@ -9,7 +9,7 @@ resource "aws_s3_bucket" "flow_logs" {
 }
 
 resource "aws_flow_log" "spoke" {
-  for_each             = {for vpck, vpc in var.spoke_vpc_params : vpck => vpc if vpc.s3_logs == true}
+  for_each             = { for vpck, vpc in var.spoke_vpc_params : vpck => vpc if vpc.s3_logs == true }
   log_destination      = aws_s3_bucket.flow_logs.arn
   log_destination_type = "s3"
   traffic_type         = "ALL"
@@ -24,7 +24,7 @@ resource "aws_flow_log" "firewall" {
 }
 
 resource "aws_cloudwatch_log_group" "flow_logs" {
-  depends_on = [ aws_internet_gateway.main ]
+  depends_on   = [aws_internet_gateway.main]
   name         = "${var.network_prefix}_flow_log_grp"
   skip_destroy = false
 }
@@ -76,7 +76,7 @@ resource "aws_flow_log" "cloud_watch_firewall" {
 }
 
 resource "aws_flow_log" "cloud_watch_spoke" {
-  for_each        = { for vpck, vpc in var.spoke_vpc_params : vpck => vpc if vpc.cloudwatch == true}
+  for_each        = { for vpck, vpc in var.spoke_vpc_params : vpck => vpc if vpc.cloudwatch == true }
   iam_role_arn    = aws_iam_role.flow_logs.arn
   log_destination = aws_cloudwatch_log_group.flow_logs.arn
   traffic_type    = "ALL"

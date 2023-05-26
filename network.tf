@@ -91,43 +91,43 @@ resource "aws_route_table_association" "spoke" {
 }
 
 resource "aws_route" "spoke" {
-    depends_on = [ aws_ec2_transit_gateway.main ]
-  for_each = aws_route_table.spoke
+  depends_on             = [aws_ec2_transit_gateway.main]
+  for_each               = aws_route_table.spoke
   route_table_id         = each.value.id
   destination_cidr_block = "0.0.0.0/0"
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
 }
 
 locals {
-  firewall_subnets = [["outside","inside","mgmt","heartbeat","tgw"]]
-  firewall_route_tables = ["internal","external","tgw"]
+  firewall_subnets      = [["outside", "inside", "mgmt", "heartbeat", "tgw"]]
+  firewall_route_tables = ["internal", "external", "tgw"]
 }
 
 resource "aws_subnet" "firewall" {
-  for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
-  vpc_id = aws_vpc.firewall_vpc.id
-  cidr_block = each.key == "tgw" ? cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 1, 1) : cidrsubnet(aws_vpc.firewall_vpc.cidr_block,3,each.value)
+  for_each                = { for index, subnet in local.firewall_subnets[0] : subnet => index }
+  vpc_id                  = aws_vpc.firewall_vpc.id
+  cidr_block              = each.key == "tgw" ? cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 1, 1) : cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 3, each.value)
   map_public_ip_on_launch = false #each.key == "outside" ? true : false
-  availability_zone = data.aws_availability_zones.available.names[0]
+  availability_zone       = data.aws_availability_zones.available.names[0]
 
   tags = {
-    Name = "${var.network_prefix}_fw_${each.key}_subnet"
+    Name     = "${var.network_prefix}_fw_${each.key}_subnet"
     rt_table = each.key == "outside" || each.key == "mgmt" ? "external" : each.key == "inside" || each.key == "heartbeat" ? "internal" : "tgw"
   }
 }
 resource "aws_route_table" "firewall" {
-    for_each = toset(local.firewall_route_tables)
-    vpc_id = aws_vpc.firewall_vpc.id
+  for_each = toset(local.firewall_route_tables)
+  vpc_id   = aws_vpc.firewall_vpc.id
 
-    tags = {
-      Name = "${var.network_prefix}_fw_${each.key}_rt_table"
-    }
-  
+  tags = {
+    Name = "${var.network_prefix}_fw_${each.key}_rt_table"
+  }
+
 }
 
 # Firewall External Route Table Associations
 resource "aws_route_table_association" "firewall" {
-  for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
+  for_each       = { for index, subnet in local.firewall_subnets[0] : subnet => index }
   subnet_id      = aws_subnet.firewall[each.key].id
   route_table_id = aws_route_table.firewall[aws_subnet.firewall[each.key].tags.rt_table].id
 }
@@ -142,8 +142,9 @@ resource "aws_route" "tgw_spoke" {
 }
 
 resource "aws_route" "firewall" {
-  for_each = toset(["internal","external"])
-  route_table_id = aws_route_table.firewall[each.key].id
+  for_each               = toset(["internal", "external"])
+  route_table_id         = aws_route_table.firewall[each.key].id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id = each.key == "external" ? aws_internet_gateway.main.id : aws_ec2_transit_gateway.main.id
+  gateway_id             = each.key == "external" ? aws_internet_gateway.main.id : null
+  transit_gateway_id     = each.key == "internal" ? aws_ec2_transit_gateway.main.id : null
 }
