@@ -47,12 +47,12 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "firewall" {
 # Transit Gateway Route Tables
 
 resource "aws_ec2_transit_gateway_route_table" "main" {
-    for_each = toset(["spoke","firewall"])
-    transit_gateway_id = aws_ec2_transit_gateway.main.id
+  for_each           = toset(["spoke", "firewall"])
+  transit_gateway_id = aws_ec2_transit_gateway.main.id
 
-    tags = {
-      Name = "${var.network_prefix}_tgw_${each.key}_rt_table"
-    }
+  tags = {
+    Name = "${var.network_prefix}_tgw_${each.key}_rt_table"
+  }
 }
 
 

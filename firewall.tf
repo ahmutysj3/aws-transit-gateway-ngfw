@@ -2,11 +2,12 @@ resource "aws_instance" "fortigate" {
   tags = {
     Name = "fortigate_instance"
   }
-  availability_zone = data.aws_availability_zones.available.names[0]
-  ami               = data.aws_ami.fortigate.id
-  instance_type     = "c6i.xlarge"
-  key_name          = var.ssh_key_name
-  monitoring        = false
+  availability_zone    = data.aws_availability_zones.available.names[0]
+  ami                  = data.aws_ami.fortigate.id
+  instance_type        = "c6i.xlarge"
+  key_name             = var.ssh_key_name
+  monitoring           = false
+  iam_instance_profile = aws_iam_instance_profile.api_call_profile.name
 
   cpu_options {
     core_count       = 2
@@ -46,4 +47,62 @@ resource "aws_eip" "fw_outside" {
   vpc                       = true
   public_ipv4_pool          = "amazon"
   network_interface         = aws_network_interface.firewall[each.key].id
+}
+
+resource "aws_iam_instance_profile" "api_call_profile" {
+  name = "api_call_profile"
+  role = aws_iam_role.api_call_role.name
+}
+
+resource "aws_iam_role" "api_call_role" {
+  name = "${var.network_prefix}api_call_role"
+
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": "sts:AssumeRole",
+            "Principal": {
+              "Service": "ec2.amazonaws.com"
+            },
+            "Effect": "Allow",
+            "Sid": ""
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "api_call_policy" {
+  name        = "${var.network_prefix}api_call_policy"
+  path        = "/"
+  description = "Policies for the FGT api_call Role"
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement":
+      [
+        {
+          "Effect": "Allow",
+          "Action": 
+            [
+              "ec2:Describe*",
+              "ec2:AssociateAddress",
+              "ec2:AssignPrivateIpAddresses",
+              "ec2:UnassignPrivateIpAddresses",
+              "ec2:ReplaceRoute"
+            ],
+            "Resource": "*"
+        }
+      ]
+}
+EOF
+}
+
+resource "aws_iam_policy_attachment" "api_call_attach" {
+  name       = "api_call-attachment"
+  roles      = [aws_iam_role.api_call_role.name]
+  policy_arn = aws_iam_policy.api_call_policy.arn
 }
