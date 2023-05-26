@@ -1,0 +1,102 @@
+# Transit Gateway
+resource "aws_ec2_transit_gateway" "main" {
+  depends_on                      = [aws_internet_gateway.main]
+  description                     = "Main Transit Gateway"
+  amazon_side_asn                 = 64512
+  auto_accept_shared_attachments  = "enable"
+  default_route_table_association = "disable"
+  default_route_table_propagation = "disable"
+  multicast_support               = "disable"
+  dns_support                     = "enable"
+  vpn_ecmp_support                = "enable"
+  transit_gateway_cidr_blocks     = [aws_subnet.firewall["tgw"].cidr_block]
+  tags = {
+    Name = "tgw_main"
+  }
+}
+
+
+# Transit Gateway VPC Attachments
+resource "aws_ec2_transit_gateway_vpc_attachment" "spoke" {
+  for_each                                        = aws_vpc.spoke
+  appliance_mode_support                          = "enable"
+  transit_gateway_default_route_table_association = false
+  transit_gateway_default_route_table_propagation = false
+  subnet_ids                                      = [element(flatten(data.aws_subnets.spoke_vpc[each.key].ids), 0)]
+  transit_gateway_id                              = aws_ec2_transit_gateway.main.id
+  vpc_id                                          = each.value.id
+
+  tags = {
+    Name = "${var.network_prefix}_tgw_${each.key}_attach"
+  }
+}
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "firewall" {
+  appliance_mode_support                          = "enable"
+  transit_gateway_default_route_table_association = false
+  transit_gateway_default_route_table_propagation = false
+  subnet_ids                                      = [aws_subnet.firewall["tgw"].id]
+  transit_gateway_id                              = aws_ec2_transit_gateway.main.id
+  vpc_id                                          = aws_vpc.firewall_vpc.id
+
+  tags = {
+    Name = "${var.network_prefix}_tgw_fw_attach"
+  }
+}
+
+# Transit Gateway Route Tables
+resource "aws_ec2_transit_gateway_route_table" "spoke" {
+  transit_gateway_id = aws_ec2_transit_gateway.main.id
+  tags = {
+    Name = "tgw_spoke_route_table"
+  }
+}
+
+resource "aws_ec2_transit_gateway_route_table" "firewall" {
+  transit_gateway_id = aws_ec2_transit_gateway.main.id
+  tags = {
+    Name = "tgw_firewall_route_table"
+  }
+}
+
+# Transit Gateway Routes
+resource "aws_ec2_transit_gateway_route" "spoke_to_firewall" {
+  destination_cidr_block         = "0.0.0.0/0"
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.firewall.id
+}
+
+resource "aws_ec2_transit_gateway_route" "spoke_null_route" {
+  for_each                       = aws_vpc.spoke
+  destination_cidr_block         = each.value.cidr_block
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
+  blackhole                      = true
+}
+
+resource "aws_ec2_transit_gateway_route" "fw_outside_null_route" {
+  for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index if subnet == "outside"}
+  destination_cidr_block         = aws_subnet.firewall[each.key].cidr_block
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.firewall.id
+  blackhole                      = true
+}
+
+
+resource "aws_ec2_transit_gateway_route" "firewall_to_spoke_subnets" {
+  for_each                       = aws_vpc.spoke
+  destination_cidr_block         = each.value.cidr_block
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.firewall.id
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke[each.key].id
+}
+
+
+# Transit Gateway Route Table Associations
+resource "aws_ec2_transit_gateway_route_table_association" "spoke" {
+  for_each                       = aws_vpc.spoke
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.spoke[each.key].id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.spoke.id
+}
+
+resource "aws_ec2_transit_gateway_route_table_association" "firewall" {
+  transit_gateway_attachment_id  = aws_ec2_transit_gateway_vpc_attachment.firewall.id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.firewall.id
+}
