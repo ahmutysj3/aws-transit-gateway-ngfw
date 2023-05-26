@@ -99,6 +99,10 @@ resource "aws_route" "spoke" {
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
 }
 
+locals {
+  firewall_subnets = [["outside","inside","mgmt","heartbeat"]]
+}
+
 resource "aws_subnet" "firewall" {
   for_each = {for index, subnet in local.firewall_subnets[0] : subnet => index}
   vpc_id = aws_vpc.firewall_vpc.id
@@ -109,9 +113,6 @@ resource "aws_subnet" "firewall" {
   tags = {
     Name = "${var.network_prefix}_fw_${each.key}_subnet"
   }
-}
-locals {
-  firewall_subnets = [["outside","inside","mgmt","heartbeat"]]
 }
 
 resource "aws_subnet" "tgw" {
