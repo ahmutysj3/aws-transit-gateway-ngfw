@@ -30,6 +30,50 @@ variable "spoke_vpc_params" {
     s3_logs    = bool
     cloudwatch = bool
   }))
+
+  default = {
+    public = {
+      cidr_block = "10.200.0.0/20"
+      subnets    = ["api", "sftp"]
+      s3_logs    = true
+      cloudwatch = false
+    }
+    dmz = {
+      cidr_block = "10.200.16.0/20"
+      subnets    = ["app", "vpn", "nginx"]
+      s3_logs    = true
+      cloudwatch = true
+    }
+    protected = {
+      cidr_block = "10.200.32.0/20"
+      subnets    = ["mysql_db", "vault", "consul"]
+      s3_logs    = true
+      cloudwatch = true
+    }
+    management = {
+      cidr_block = "10.200.48.0/20"
+      subnets    = ["monitor", "logging", "admin"]
+      s3_logs    = true
+      cloudwatch = false
+    }
+  }
+}
+
+variable "firewall_params" {
+  description = "options for fortigate firewall instance"
+  type = object({
+    firewall_name            = string
+    instance_type            = string
+    outside_extra_public_ips = number
+    inside_extra_private_ips = number
+  })
+
+  default = {
+    firewall_name            = "fortigate_001"
+    instance_type            = "c6i.xlarge"
+    outside_extra_public_ips = 3
+    inside_extra_private_ips = 3
+  }
 }
 
 variable "transit_gateway_defaults" {

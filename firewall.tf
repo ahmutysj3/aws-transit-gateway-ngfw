@@ -1,10 +1,7 @@
 resource "aws_instance" "fortigate" {
-  tags = {
-    Name = "fortigate_instance"
-  }
   availability_zone    = data.aws_availability_zones.available.names[0]
   ami                  = data.aws_ami.fortigate.id
-  instance_type        = "c6i.xlarge"
+  instance_type        = var.firewall_params.instance_type
   key_name             = var.ssh_key_name
   monitoring           = false
   iam_instance_profile = aws_iam_instance_profile.api_call_profile.name
@@ -24,29 +21,41 @@ resource "aws_instance" "fortigate" {
     }
   }
 
+  tags = {
+    Name = "${var.network_prefix}_${var.firewall_params.firewall_name}"
+  }
+}
+
+locals {
+  outside_extra_ips = [for k in range(var.firewall_params.outside_extra_public_ips) : cidrhost(aws_subnet.firewall["outside"].cidr_block, -2 - k)]
+  inside_extra_ips  = [for k in range(var.firewall_params.inside_extra_private_ips) : cidrhost(aws_subnet.firewall["inside"].cidr_block, -2 - k)]
+
 }
 
 resource "aws_network_interface" "firewall" {
-  for_each          = { for index, subnet in local.firewall_subnets : subnet => index if subnet != "tgw" }
-  subnet_id         = aws_subnet.firewall[each.key].id
-  security_groups   = [aws_security_group.firewall.id]
-  source_dest_check = false
+  for_each                = { for index, subnet in local.firewall_subnets : subnet => index if subnet != "tgw" }
+  subnet_id               = aws_subnet.firewall[each.key].id
+  private_ip_list_enabled = true
+  private_ip_list         = each.key == "mgmt" || each.key == "heartbeat" ? [cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)] : each.key == "outside" ? concat([cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)], local.outside_extra_ips) : concat([cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)], local.inside_extra_ips)
+  security_groups         = [aws_security_group.firewall.id]
+  source_dest_check       = false
 
   tags = {
     Name = "${var.network_prefix}_fw_${each.key}_interface"
   }
 }
 
-resource "aws_eip" "fw_outside" {
-  for_each = { for index, subnet in local.firewall_subnets : subnet => index if subnet == "outside" }
-  tags = {
-    Name = "fw_outside_eip"
-  }
+resource "aws_eip" "firewall" {
+  for_each                  = { for index, subnet in local.firewall_subnets : subnet => index if subnet == "outside" || subnet == "mgmt" }
   associate_with_private_ip = aws_network_interface.firewall[each.key].private_ip
   network_border_group      = var.region_aws
   vpc                       = true
   public_ipv4_pool          = "amazon"
   network_interface         = aws_network_interface.firewall[each.key].id
+
+  tags = {
+    Name = "${var.network_prefix}_fw_${each.key}_eip"
+  }
 }
 
 resource "aws_iam_instance_profile" "api_call_profile" {
