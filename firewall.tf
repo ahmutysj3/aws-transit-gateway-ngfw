@@ -27,18 +27,15 @@ resource "aws_instance" "fortigate" {
 }
 
 locals {
-
-  outside_extra_ips_list = [for k in range(var.firewall_params.outside_extra_public_ips) : cidrhost(aws_subnet.firewall["outside"].cidr_block, -2 - k)]
   inside_extra_ips_list  = [for k in range(var.firewall_params.inside_extra_private_ips) : cidrhost(aws_subnet.firewall["inside"].cidr_block, -2 - k)]
   outside_extra_ips_map = {for k, v in range(var.firewall_params.outside_extra_public_ips) : "outside_extra_eip_${k}" => cidrhost(aws_subnet.firewall["outside"].cidr_block, -2 -k)}
-
 }
 
 resource "aws_network_interface" "firewall" {
   for_each                = { for index, subnet in local.firewall_subnets : subnet => index if subnet != "tgw" }
   subnet_id               = aws_subnet.firewall[each.key].id
   private_ip_list_enabled = true
-  private_ip_list         = each.key == "mgmt" || each.key == "heartbeat" ? [cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)] : each.key == "outside" ? concat([cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)], local.outside_extra_ips_list) : concat([cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)], local.inside_extra_ips_list)
+  private_ip_list         = each.key == "mgmt" || each.key == "heartbeat" ? [cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)] : each.key == "outside" ? concat([cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)], values(local.outside_extra_ips_map)) : concat([cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)], local.inside_extra_ips_list)
   security_groups         = [aws_security_group.firewall.id]
   source_dest_check       = false
 
