@@ -29,6 +29,39 @@ resource "aws_internet_gateway_attachment" "main" {
   vpc_id              = aws_vpc.firewall_vpc.id
 }
 
+resource "aws_network_acl_association" "main" {
+  for_each = merge(aws_subnet.firewall,aws_subnet.spoke)
+  network_acl_id = aws_network_acl.main[each.key].id
+  subnet_id = each.value.id
+}
+
+resource "aws_network_acl" "main" {
+  for_each = merge(aws_subnet.firewall,aws_subnet.spoke)
+  vpc_id = each.value.vpc_id
+
+  egress {
+    protocol   = "-1"
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 0
+    to_port    = 0
+  }
+
+  ingress {
+    protocol   = "-1"
+    rule_no    = 100
+    action     = "allow"
+    cidr_block = "0.0.0.0/0"
+    from_port  = 0
+    to_port    = 0
+  }
+
+  tags = {
+    Name = "${var.network_prefix}_${each.key}_acl"
+  }
+}
+
 resource "aws_security_group" "firewall" {
   depends_on  = [aws_vpc.firewall_vpc]
   name        = "Firewall Allow-All Security Group"
@@ -70,6 +103,7 @@ resource "aws_subnet" "spoke" { # creates a /24 subnet for each entry in the sub
 
   tags = {
     Name = "${each.key}_subnet"
+    type = "spoke"
   }
 }
 
@@ -113,6 +147,7 @@ resource "aws_subnet" "firewall" {
   tags = {
     Name     = "${var.network_prefix}_fw_${each.key}_subnet"
     rt_table = each.key == "outside" || each.key == "mgmt" ? "external" : each.key == "inside" || each.key == "heartbeat" ? "internal" : "tgw"
+    type = "firewall"
   }
 }
 resource "aws_route_table" "firewall" {
