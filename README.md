@@ -10,39 +10,49 @@ Use of this module/s will require setting up **Terraform AWS Provider & AWS-CLI*
 
 ## Instructions
 
-- define region, network name, supernet, and vpc names for network in the *terraform.tfvars* file supernet variable
+- define region, network name, supernet, and vpc names for network in the *terraform.tfvars* file
 
 ## Network Structure
 
 ### Hub-Spoke Design utilizing Transit Gateway
 
-- `Hub` Virtual Private Cloud
+- `firewall` Virtual Private Cloud
     > security vpc where network virtual appliance will sit
-- `DMZ` Virtual Private Cloud
-- `App` Virtual Private Cloud
-- `DB` Virtual Private Cloud
+- `protected` Virtual Private Cloud
+- `management` Virtual Private Cloud
+- `public` Virtual Private Cloud
+- `dmz` Virtual Private Cloud
 
 ## Resources Used
 
-- aws_vpc
-- aws_subnet
-- aws_route_table
-- aws_route_table_association
-- aws_route
-- aws_security_group
-- aws_vpc_security_group_ingress_rule
-- aws_vpc_security_group_egress_rule
-- aws_internet_gateway
+- data.aws_ami
+- data.aws_availability_zones
+- data.aws_iam_policy_document
+- data.aws_subnets
+- aws_cloudwatch_log_group
 - aws_ec2_transit_gateway
-- aws_ec2_transit_gateway_route_table
 - aws_ec2_transit_gateway_route
+- aws_ec2_transit_gateway_route_table
 - aws_ec2_transit_gateway_route_table_association
 - aws_ec2_transit_gateway_vpc_attachment
-- aws_networkmanager_global_network
-- aws_networkmanager_transit_gateway_registration
+- aws_eip
+- aws_flow_log
+- aws_iam_instance_profile
+- aws_iam_policy
+- aws_iam_policy_attachment
+- aws_iam_role
+- aws_iam_role_policy
+- aws_instance
+- aws_internet_gateway
+- aws_internet_gateway_attachment
+- aws_network_acl
+- aws_network_acl_association
+- aws_network_interface
+- aws_route
+- aws_route_table
+- aws_route_table_association
+- aws_s3_bucket
+- aws_security_group
+- aws_subnet
+- aws_vpc_vpc
 
-## Notes
-
-- Adding more than 1 x "hub" type VPC will *break* the module!
-- the keys for the spoke VPCs in var.vpc_params CANNOT be changed. 
-    - The names are used for security groups later in the module
