@@ -27,7 +27,6 @@ resource "aws_vpc" "spoke" {
 
 # Security VPC Internet Gateway
 resource "aws_internet_gateway" "main" {
-  depends_on = [aws_vpc.firewall]
   tags = {
     Name = "${var.network_prefix}_igw"
   }
@@ -72,7 +71,6 @@ resource "aws_network_acl" "main" {
 }
 
 resource "aws_security_group" "firewall" {
-  depends_on  = [aws_vpc.firewall]
   name        = "Firewall Allow-All Security Group"
   description = "Allow all traffic to/from the Internet"
   vpc_id      = aws_vpc.firewall.id

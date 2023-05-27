@@ -24,7 +24,6 @@ resource "aws_flow_log" "firewall" {
 }
 
 resource "aws_cloudwatch_log_group" "flow_logs" {
-  depends_on   = [aws_internet_gateway.main]
   name         = "${var.network_prefix}_flow_log_grp"
   skip_destroy = false
 }

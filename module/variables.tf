@@ -58,5 +58,5 @@ variable "availability_zone_list" {
 }
 
 variable "fortigate_ami" {
-  
+
 }
