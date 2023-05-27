@@ -3,16 +3,6 @@ variable "region_aws" {
   type        = string
 }
 
-variable "network_prefix" {
-  description = "prefix to prepend on all resource names within the network"
-  type        = string
-}
-
-variable "supernet_cidr" {
-  description = "cidr block for entire datacenter, must be /16"
-  type        = string
-}
-
 variable "spoke_vpc_params" {
   description = "parameters for spoke VPCs"
   type = map(object({

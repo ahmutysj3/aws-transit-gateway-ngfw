@@ -44,3 +44,5 @@ transit_gateway_defaults = {
   dns_support                     = "enable"
   vpn_ecmp_support                = "enable"
 }
+
+region_aws = "us-east-1"
