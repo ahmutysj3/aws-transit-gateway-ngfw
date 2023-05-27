@@ -28,9 +28,6 @@ spoke_vpc_params = {
 
 firewall_params = {
   firewall_name            = "fortigate_001"
-  subnets                  = ["outside", "inside", "mgmt", "heartbeat", "tgw"]
-  rt_tables                = ["internal", "external", "tgw"]
-  instance_type            = "c6i.xlarge"
   outside_extra_public_ips = 3
   inside_extra_private_ips = 3
 }

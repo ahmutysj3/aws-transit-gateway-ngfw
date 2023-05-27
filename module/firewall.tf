@@ -1,7 +1,7 @@
 resource "aws_instance" "fortigate" {
   availability_zone    = var.availability_zone_list[0]
   ami                  = var.fortigate_ami.id
-  instance_type        = var.firewall_params.instance_type
+  instance_type        = var.firewall_defaults.instance_type
   key_name             = "${var.network_prefix}_linux_vm"
   monitoring           = false
   iam_instance_profile = aws_iam_instance_profile.api_call_profile.name
@@ -13,7 +13,7 @@ resource "aws_instance" "fortigate" {
 
   dynamic "network_interface" {
     iterator = net_int
-    for_each = { for index, subnet in var.firewall_params.subnets : subnet => index if subnet != "tgw" }
+    for_each = { for index, subnet in var.firewall_defaults.subnets : subnet => index if subnet != "tgw" }
 
     content {
       device_index         = net_int.value
@@ -32,7 +32,7 @@ locals {
 }
 
 resource "aws_network_interface" "firewall" {
-  for_each                = { for index, subnet in var.firewall_params.subnets : subnet => index if subnet != "tgw" }
+  for_each                = { for index, subnet in var.firewall_defaults.subnets : subnet => index if subnet != "tgw" }
   subnet_id               = aws_subnet.firewall[each.key].id
   private_ip_list_enabled = true
   private_ip_list         = each.key == "mgmt" || each.key == "heartbeat" ? [cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)] : each.key == "outside" ? concat([cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)], values(local.outside_extra_ips_map)) : concat([cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)], local.inside_extra_ips_list)
@@ -58,7 +58,7 @@ resource "aws_eip" "outside_extra" {
 }
 
 resource "aws_eip" "firewall" {
-  for_each                  = { for index, subnet in var.firewall_params.subnets : subnet => index if subnet == "outside" || subnet == "mgmt" }
+  for_each                  = { for index, subnet in var.firewall_defaults.subnets : subnet => index if subnet == "outside" || subnet == "mgmt" }
   associate_with_private_ip = cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)
   network_border_group      = var.region_aws
   vpc                       = true

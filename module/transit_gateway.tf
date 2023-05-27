@@ -71,7 +71,7 @@ resource "aws_ec2_transit_gateway_route" "spoke_null_route" {
 }
 
 resource "aws_ec2_transit_gateway_route" "fw_outside_null_route" {
-  for_each                       = { for index, subnet in var.firewall_params.subnets : subnet => index if subnet == "outside" }
+  for_each                       = { for index, subnet in var.firewall_defaults.subnets : subnet => index if subnet == "outside" }
   destination_cidr_block         = aws_subnet.firewall[each.key].cidr_block
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.main["firewall"].id
   blackhole                      = true

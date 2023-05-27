@@ -48,6 +48,15 @@ variable "transit_gateway_defaults" {
   })
 }
 
+variable "firewall_defaults" {
+  description = "default subnet and interface values for firewall"
+  type = object({
+    subnets                  = ["outside", "inside", "heartbeat", "mgmt", "tgw"]
+    rt_tables                = ["internal", "external", "tgw"]
+    instance_type            = "c6i.xlarge"
+  })
+}
+
 variable "availability_zone_list" {}
 
 variable "fortigate_ami" {}
