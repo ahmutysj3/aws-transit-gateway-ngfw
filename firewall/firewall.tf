@@ -53,8 +53,8 @@ resource "aws_instance" "fortigate" {
 }
 
 locals {
-  inside_extra_ips_list  = [for k in range(var.firewall_params.inside_extra_private_ips) : cidrhost(aws_subnet.firewall["inside"].cidr_block, -2 - k)]
-  outside_extra_ips_map = {for k, v in range(var.firewall_params.outside_extra_public_ips) : "outside_extra_eip_${k}" => cidrhost(aws_subnet.firewall["outside"].cidr_block, -2 -k)}
+  inside_extra_ips_list = [for k in range(var.firewall_params.inside_extra_private_ips) : cidrhost(aws_subnet.firewall["inside"].cidr_block, -2 - k)]
+  outside_extra_ips_map = { for k, v in range(var.firewall_params.outside_extra_public_ips) : "outside_extra_eip_${k}" => cidrhost(aws_subnet.firewall["outside"].cidr_block, -2 - k) }
 }
 
 resource "aws_network_interface" "firewall" {
@@ -71,12 +71,12 @@ resource "aws_network_interface" "firewall" {
 }
 
 resource "aws_eip" "outside_extra" {
-  for_each = local.outside_extra_ips_map
+  for_each                  = local.outside_extra_ips_map
   associate_with_private_ip = each.value
-  network_border_group = var.region_aws
-  vpc = true
-  public_ipv4_pool = "amazon"
-  network_interface = aws_network_interface.firewall["outside"].id
+  network_border_group      = var.region_aws
+  vpc                       = true
+  public_ipv4_pool          = "amazon"
+  network_interface         = aws_network_interface.firewall["outside"].id
 
   tags = {
     Name = "${var.network_prefix}_${each.key}"

@@ -30,14 +30,14 @@ resource "aws_internet_gateway_attachment" "main" {
 }
 
 resource "aws_network_acl_association" "main" {
-  for_each = merge(aws_subnet.firewall,aws_subnet.spoke)
+  for_each       = merge(aws_subnet.firewall, aws_subnet.spoke)
   network_acl_id = aws_network_acl.main[each.key].id
-  subnet_id = each.value.id
+  subnet_id      = each.value.id
 }
 
 resource "aws_network_acl" "main" {
-  for_each = merge(aws_subnet.firewall,aws_subnet.spoke)
-  vpc_id = each.value.vpc_id
+  for_each = merge(aws_subnet.firewall, aws_subnet.spoke)
+  vpc_id   = each.value.vpc_id
 
   egress {
     protocol   = "-1"
@@ -142,7 +142,7 @@ resource "aws_subnet" "firewall" {
   tags = {
     Name     = "${var.network_prefix}_fw_${each.key}_subnet"
     rt_table = each.key == "outside" || each.key == "mgmt" ? "external" : each.key == "inside" || each.key == "heartbeat" ? "internal" : "tgw"
-    type = "firewall"
+    type     = "firewall"
   }
 }
 resource "aws_route_table" "firewall" {
