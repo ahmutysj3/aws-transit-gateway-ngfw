@@ -37,7 +37,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "firewall" {
   transit_gateway_default_route_table_propagation = false
   subnet_ids                                      = [aws_subnet.firewall["tgw"].id]
   transit_gateway_id                              = aws_ec2_transit_gateway.main.id
-  vpc_id                                          = aws_vpc.firewall_vpc.id
+  vpc_id                                          = aws_vpc.firewall.id
 
   tags = {
     Name = "${var.network_prefix}_tgw_fw_attach"

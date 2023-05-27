@@ -20,7 +20,7 @@ resource "aws_flow_log" "firewall" {
   log_destination      = aws_s3_bucket.flow_logs.arn
   log_destination_type = "s3"
   traffic_type         = "ALL"
-  vpc_id               = aws_vpc.firewall_vpc.id # add datasource to pull this info from module call
+  vpc_id               = aws_vpc.firewall.id # add datasource to pull this info from module call
 }
 
 resource "aws_cloudwatch_log_group" "flow_logs" {
@@ -72,7 +72,7 @@ resource "aws_flow_log" "cloud_watch_firewall" {
   iam_role_arn    = aws_iam_role.flow_logs.arn
   log_destination = aws_cloudwatch_log_group.flow_logs.arn
   traffic_type    = "ALL"
-  vpc_id          = aws_vpc.firewall_vpc.id # add datasource to pull this info from module call
+  vpc_id          = aws_vpc.firewall.id # add datasource to pull this info from module call
 }
 
 resource "aws_flow_log" "cloud_watch_spoke" {

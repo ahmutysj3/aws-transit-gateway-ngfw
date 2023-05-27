@@ -1,9 +1,9 @@
 # Security VPC
-resource "aws_vpc" "firewall_vpc" {
+resource "aws_vpc" "firewall" {
   cidr_block = cidrsubnet(var.supernet_cidr, 7, 127)
 
   tags = {
-    Name = "firewall_vpc"
+    Name = "${var.network_prefix}_firewall_vpc"
   }
 }
 
@@ -12,13 +12,13 @@ resource "aws_vpc" "spoke" {
   for_each   = var.spoke_vpc_params
   cidr_block = each.value.cidr_block
   tags = {
-    Name = each.key
+    Name = "${var.network_prefix}_${each.key}_vpc"
   }
 }
 
 # Security VPC Internet Gateway
 resource "aws_internet_gateway" "main" {
-  depends_on = [aws_vpc.firewall_vpc]
+  depends_on = [aws_vpc.firewall]
   tags = {
     Name = "${var.network_prefix}_igw"
   }
@@ -26,7 +26,7 @@ resource "aws_internet_gateway" "main" {
 
 resource "aws_internet_gateway_attachment" "main" {
   internet_gateway_id = aws_internet_gateway.main.id
-  vpc_id              = aws_vpc.firewall_vpc.id
+  vpc_id              = aws_vpc.firewall.id
 }
 
 resource "aws_network_acl_association" "main" {
@@ -63,10 +63,10 @@ resource "aws_network_acl" "main" {
 }
 
 resource "aws_security_group" "firewall" {
-  depends_on  = [aws_vpc.firewall_vpc]
+  depends_on  = [aws_vpc.firewall]
   name        = "Firewall Allow-All Security Group"
   description = "Allow all traffic to/from the Internet"
-  vpc_id      = aws_vpc.firewall_vpc.id
+  vpc_id      = aws_vpc.firewall.id
 
 
   ingress {
@@ -134,8 +134,8 @@ resource "aws_route" "spoke" {
 
 resource "aws_subnet" "firewall" {
   for_each                = { for index, subnet in var.firewall_params.subnets : subnet => index }
-  vpc_id                  = aws_vpc.firewall_vpc.id
-  cidr_block              = each.key == "tgw" ? cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 1, 1) : cidrsubnet(aws_vpc.firewall_vpc.cidr_block, 3, each.value)
+  vpc_id                  = aws_vpc.firewall.id
+  cidr_block              = each.key == "tgw" ? cidrsubnet(aws_vpc.firewall.cidr_block, 1, 1) : cidrsubnet(aws_vpc.firewall.cidr_block, 3, each.value)
   map_public_ip_on_launch = false #each.key == "outside" ? true : false
   availability_zone       = data.aws_availability_zones.available.names[0]
 
@@ -147,7 +147,7 @@ resource "aws_subnet" "firewall" {
 }
 resource "aws_route_table" "firewall" {
   for_each = toset(var.firewall_params.rt_tables)
-  vpc_id   = aws_vpc.firewall_vpc.id
+  vpc_id   = aws_vpc.firewall.id
 
   tags = {
     Name = "${var.network_prefix}_fw_${each.key}_rt_table"
