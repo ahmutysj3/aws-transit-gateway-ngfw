@@ -10,7 +10,8 @@ Use of this module/s will require setting up **Terraform AWS Provider & AWS-CLI*
 
 ## Instructions
 
-- define region, network name, supernet, and vpc names for network in the *terraform.tfvars* file
+- define region, transit gateway options, firewall options and vpc names for network in the *terraform.tfvars* file
+- define supernet and network prefix name in *main.tf*
 
 ## Network Structure
 
