@@ -17,9 +17,6 @@ variable "firewall_params" {
   description = "options for fortigate firewall instance"
   type = object({
     firewall_name            = string
-    subnets                  = list(string)
-    rt_tables                = list(string)
-    instance_type            = string
     outside_extra_public_ips = number
     inside_extra_private_ips = number
   })
