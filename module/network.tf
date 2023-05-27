@@ -1,4 +1,13 @@
 # Security VPC
+data "aws_subnets" "spoke_vpc" {
+  for_each = aws_vpc.spoke
+
+  filter {
+    name   = "vpc-id"
+    values = [each.value.id]
+  }
+}
+
 resource "aws_vpc" "firewall" {
   cidr_block = cidrsubnet(var.supernet_cidr, 7, 127)
 
@@ -99,7 +108,7 @@ resource "aws_subnet" "spoke" { # creates a /24 subnet for each entry in the sub
   cidr_block              = cidrsubnet(aws_vpc.spoke[each.value].cidr_block, 24 - element(split("/", aws_vpc.spoke[each.value].cidr_block), 1), lookup(zipmap(lookup(local.vpc_subnet_map, each.value), range(length(lookup(local.vpc_subnet_map, each.value)))), each.key))
   vpc_id                  = aws_vpc.spoke[each.value].id
   map_public_ip_on_launch = false
-  availability_zone       = data.aws_availability_zones.available.names[0]
+  availability_zone       = var.availability_zone_list[0]
 
   tags = {
     Name = "${each.key}_subnet"
@@ -137,7 +146,7 @@ resource "aws_subnet" "firewall" {
   vpc_id                  = aws_vpc.firewall.id
   cidr_block              = each.key == "tgw" ? cidrsubnet(aws_vpc.firewall.cidr_block, 1, 1) : cidrsubnet(aws_vpc.firewall.cidr_block, 3, each.value)
   map_public_ip_on_launch = false #each.key == "outside" ? true : false
-  availability_zone       = data.aws_availability_zones.available.names[0]
+  availability_zone       = var.availability_zone_list[0]
 
   tags = {
     Name     = "${var.network_prefix}_fw_${each.key}_subnet"

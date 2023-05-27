@@ -52,3 +52,11 @@ variable "transit_gateway_defaults" {
     vpn_ecmp_support                = string
   })
 }
+
+variable "availability_zone_list" {
+
+}
+
+variable "fortigate_ami" {
+  
+}

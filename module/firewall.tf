@@ -1,6 +1,6 @@
 resource "aws_instance" "fortigate" {
-  availability_zone    = data.aws_availability_zones.available.names[0]
-  ami                  = data.aws_ami.fortigate.id
+  availability_zone    = var.availability_zone_list[0]
+  ami                  = var.fortigate_ami.id
   instance_type        = var.firewall_params.instance_type
   key_name             = var.ssh_key_name
   monitoring           = false
@@ -76,7 +76,7 @@ resource "aws_iam_instance_profile" "api_call_profile" {
 }
 
 resource "aws_iam_role" "api_call_role" {
-  name = "${var.network_prefix}api_call_role"
+  name = "${var.network_prefix}_api_call_role"
 
   assume_role_policy = <<EOF
 {
@@ -96,7 +96,7 @@ EOF
 }
 
 resource "aws_iam_policy" "api_call_policy" {
-  name        = "${var.network_prefix}api_call_policy"
+  name        = "${var.network_prefix}_api_call_policy"
   path        = "/"
   description = "Policies for the FGT api_call Role"
 
