@@ -1,3 +1,29 @@
+# Availability Zones
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+# AMI for FortiGate Instance
+data "aws_ami" "fortigate" {
+  owners = ["aws-marketplace"]
+  #most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["FortiGate-VM64-AWSONDEMAND*7.4.0*"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 resource "aws_instance" "fortigate" {
   availability_zone    = data.aws_availability_zones.available.names[0]
   ami                  = data.aws_ami.fortigate.id
@@ -13,7 +39,7 @@ resource "aws_instance" "fortigate" {
 
   dynamic "network_interface" {
     iterator = net_int
-    for_each = { for index, subnet in local.firewall_subnets : subnet => index if subnet != "tgw" }
+    for_each = { for index, subnet in var.firewall_params.subnets : subnet => index if subnet != "tgw" }
 
     content {
       device_index         = net_int.value
@@ -32,7 +58,7 @@ locals {
 }
 
 resource "aws_network_interface" "firewall" {
-  for_each                = { for index, subnet in local.firewall_subnets : subnet => index if subnet != "tgw" }
+  for_each                = { for index, subnet in var.firewall_params.subnets : subnet => index if subnet != "tgw" }
   subnet_id               = aws_subnet.firewall[each.key].id
   private_ip_list_enabled = true
   private_ip_list         = each.key == "mgmt" || each.key == "heartbeat" ? [cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)] : each.key == "outside" ? concat([cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)], values(local.outside_extra_ips_map)) : concat([cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)], local.inside_extra_ips_list)
@@ -58,7 +84,7 @@ resource "aws_eip" "outside_extra" {
 }
 
 resource "aws_eip" "firewall" {
-  for_each                  = { for index, subnet in local.firewall_subnets : subnet => index if subnet == "outside" || subnet == "mgmt" }
+  for_each                  = { for index, subnet in var.firewall_params.subnets : subnet => index if subnet == "outside" || subnet == "mgmt" }
   associate_with_private_ip = cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)
   network_border_group      = var.region_aws
   vpc                       = true
