@@ -132,7 +132,6 @@ resource "aws_route_table_association" "spoke" {
 }
 
 resource "aws_route" "spoke" {
-  depends_on             = [aws_ec2_transit_gateway.main]
   for_each               = aws_route_table.spoke
   route_table_id         = each.value.id
   destination_cidr_block = "0.0.0.0/0"
@@ -172,7 +171,6 @@ resource "aws_route_table_association" "firewall" {
 # Firewall TGW Route Table Routes
 resource "aws_route" "tgw_spoke" {
   for_each               = var.spoke_vpc_params
-  #depends_on             = [aws_ec2_transit_gateway.main]
   route_table_id         = aws_route_table.firewall["tgw"].id
   destination_cidr_block = each.value.cidr_block
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
