@@ -44,8 +44,3 @@ transit_gateway_defaults = {
   dns_support                     = "enable"
   vpn_ecmp_support                = "enable"
 }
-
-region_aws     = "us-east-1"
-ssh_key_name   = "trace_linux_vm"
-network_prefix = "trace"
-supernet_cidr  = "10.200.0.0/16"

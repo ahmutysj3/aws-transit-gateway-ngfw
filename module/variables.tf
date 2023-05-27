@@ -3,11 +3,6 @@ variable "region_aws" {
   type        = string
 }
 
-variable "ssh_key_name" {
-  description = "Name of the SSH public key to be added to instance authorized_keys file"
-  type        = string
-}
-
 variable "network_prefix" {
   description = "prefix to prepend on all resource names within the network"
   type        = string
@@ -53,10 +48,6 @@ variable "transit_gateway_defaults" {
   })
 }
 
-variable "availability_zone_list" {
+variable "availability_zone_list" {}
 
-}
-
-variable "fortigate_ami" {
-
-}
+variable "fortigate_ami" {}

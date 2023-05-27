@@ -2,7 +2,7 @@ resource "aws_instance" "fortigate" {
   availability_zone    = var.availability_zone_list[0]
   ami                  = var.fortigate_ami.id
   instance_type        = var.firewall_params.instance_type
-  key_name             = var.ssh_key_name
+  key_name             = "${var.network_prefix}_linux_vm"
   monitoring           = false
   iam_instance_profile = aws_iam_instance_profile.api_call_profile.name
 
