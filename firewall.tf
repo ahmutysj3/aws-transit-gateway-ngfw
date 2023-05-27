@@ -16,7 +16,7 @@ resource "aws_instance" "fortigate" {
 
   dynamic "network_interface" {
     iterator = net_int
-    for_each = { for index, subnet in local.firewall_subnets[0] : subnet => index if subnet != "tgw" }
+    for_each = { for index, subnet in local.firewall_subnets : subnet => index if subnet != "tgw" }
 
     content {
       device_index         = net_int.value
@@ -27,7 +27,7 @@ resource "aws_instance" "fortigate" {
 }
 
 resource "aws_network_interface" "firewall" {
-  for_each          = { for index, subnet in local.firewall_subnets[0] : subnet => index if subnet != "tgw" }
+  for_each          = { for index, subnet in local.firewall_subnets : subnet => index if subnet != "tgw" }
   subnet_id         = aws_subnet.firewall[each.key].id
   security_groups   = [aws_security_group.firewall.id]
   source_dest_check = false
@@ -38,7 +38,7 @@ resource "aws_network_interface" "firewall" {
 }
 
 resource "aws_eip" "fw_outside" {
-  for_each = { for index, subnet in local.firewall_subnets[0] : subnet => index if subnet == "outside" }
+  for_each = { for index, subnet in local.firewall_subnets : subnet => index if subnet == "outside" }
   tags = {
     Name = "fw_outside_eip"
   }
