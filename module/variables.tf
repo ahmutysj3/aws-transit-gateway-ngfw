@@ -63,3 +63,7 @@ variable "firewall_defaults" {
 variable "availability_zone_list" {}
 
 variable "fortigate_ami" {}
+
+variable "iam_policy_assume_role" {}
+
+variable "iam_policy_flow_logs" {}
