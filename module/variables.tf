@@ -48,15 +48,15 @@ variable "transit_gateway_defaults" {
 variable "firewall_defaults" {
   description = "default subnet and interface values for firewall"
   type = object({
-    subnets                  = list(string)
-    rt_tables                = list(string)
-    instance_type            = string
+    subnets       = list(string)
+    rt_tables     = list(string)
+    instance_type = string
   })
 
   default = {
-    subnets                  = ["outside", "inside", "heartbeat", "mgmt", "tgw"]
-    rt_tables                = ["internal", "external", "tgw"]
-    instance_type            = "c6i.xlarge"
+    subnets       = ["outside", "inside", "heartbeat", "mgmt", "tgw"]
+    rt_tables     = ["internal", "external", "tgw"]
+    instance_type = "c6i.xlarge"
   }
 }
 
