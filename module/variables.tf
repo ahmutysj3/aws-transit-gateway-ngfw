@@ -62,7 +62,7 @@ variable "cloud_watch_params" {
   description = "values for cloudwatch logging"
   type = object({
     cloud_watch_on     = bool
-    log_retention_days = number
+    retention_in_days = number
   })
 }
 

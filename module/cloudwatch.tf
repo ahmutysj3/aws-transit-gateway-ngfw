@@ -2,6 +2,7 @@ resource "aws_cloudwatch_log_group" "flow_logs" {
   count        = var.cloud_watch_params.cloud_watch_on == true ? 1 : 0
   name         = "${var.network_prefix}_cloudwatch_log_grp"
   skip_destroy = false
+  retention_in_days = var.cloud_watch_params.retention_in_days
 }
 
 resource "aws_iam_role" "flow_logs" {
@@ -23,6 +24,7 @@ resource "aws_flow_log" "cloud_watch_firewall" {
   log_destination = aws_cloudwatch_log_group.flow_logs[0].arn
   traffic_type    = "ALL"
   vpc_id          = aws_vpc.firewall.id
+  
 }
 
 resource "aws_flow_log" "cloud_watch_spoke" {
