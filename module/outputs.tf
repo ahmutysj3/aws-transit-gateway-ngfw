@@ -22,12 +22,12 @@ output "network_interfaces" {
 
 output "eips" {
   value = merge(
-    { for eipk, eip in module.network.eips.firewall_outside : eipk => {
+    { for eipk, eip in aws_eip.firewall : eipk => {
       name = eip.tags.Name,
       id   = eip.id,
       private_ip = eip.private_ip }
     },
-    { for eipk, eip in module.network.eips.outside_extra : eipk => {
+    { for eipk, eip in aws_eip.outside_extra : eipk => {
       name       = eip.tags.Name,
       id         = eip.id,
       private_ip = eip.private_ip
@@ -35,24 +35,25 @@ output "eips" {
   })
 }
 
-output "s3_logs" {
-  value = merge(aws_flow_log.firewall, aws_flow_log.spoke)
-}
-
-output "s3_bucket" {
-  value = aws_s3_bucket.flow_logs
-}
-
 output "transit_gateway" {
-  value = aws_ec2_transit_gateway.main
+  value = {
+    id   = aws_ec2_transit_gateway.main.id
+    name = aws_ec2_transit_gateway.main.tags.Name
+    asn = aws_ec2_transit_gateway.main.amazon_side_asn
+    cidr_blocks = aws_ec2_transit_gateway.main.transit_gateway_cidr_blocks
+  }
 }
 
 output "transit_gateway_vpc_attachments" {
-  value = merge(aws_ec2_transit_gateway_vpc_attachment.spoke, aws_ec2_transit_gateway_vpc_attachment.firewall)
+  value = {for attachk, attach in merge(aws_ec2_transit_gateway_vpc_attachment.spoke, {firewall = aws_ec2_transit_gateway_vpc_attachment.firewall}) : attachk => {id = attach.id, name = attach.tags.Name, tgw = attach.transit_gateway_id, vpc = attach.vpc_id}}
 }
 
 output "transit_gateway_rt_tables" {
-  value = aws_ec2_transit_gateway_route_table.main
+  value = {for rt_tablek, rt_table in aws_ec2_transit_gateway_route_table.main : rt_tablek => {
+    id = rt_table.id,
+    name = rt_table.tags.Name,
+    tgw = rt_table.transit_gateway_id,
+  }}
 }
 
 output "vpcs" {

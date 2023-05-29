@@ -1,4 +1,4 @@
-output "firewall" {
+/* output "firewall" {
   value = module.network.firewall
 }
 
@@ -8,15 +8,8 @@ output "network_interfaces" {
 
 output "eips" {
   value = module.network.eips
-}
+} */
 
-/* output "s3_logs" {
-  value = module.network.s3_logs
-}
-
-output "s3_bucket" {
-  value = module.network.s3_bucket
-}
 
 output "transit_gateway" {
   value = module.network.transit_gateway
@@ -30,6 +23,7 @@ output "transit_gateway_rt_tables" {
   value = module.network.transit_gateway_rt_tables
 }
 
+/* 
 output "vpcs" {
   value = module.network.vpcs
 }
