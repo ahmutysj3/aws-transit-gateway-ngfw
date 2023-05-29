@@ -20,6 +20,15 @@ variable "firewall_params" {
   })
 }
 
+variable "firewall_defaults" {
+  description = "default subnet and interface values for firewall"
+  type = object({
+    subnets       = list(string)
+    rt_tables     = list(string)
+    instance_type = string
+  })
+}
+
 variable "transit_gateway_defaults" {
   description = "values for the transit gateway default option values"
   type = object({

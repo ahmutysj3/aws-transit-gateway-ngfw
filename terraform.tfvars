@@ -33,6 +33,12 @@ firewall_params = {
   inside_extra_private_ips = 3
 }
 
+firewall_defaults = {
+  subnets       = ["outside", "inside", "heartbeat", "mgmt", "tgw"]
+  rt_tables     = ["internal", "external", "tgw"]
+  instance_type = "c6i.xlarge"
+}
+
 transit_gateway_defaults = {
   amazon_side_asn                 = 64512
   auto_accept_shared_attachments  = "enable"
