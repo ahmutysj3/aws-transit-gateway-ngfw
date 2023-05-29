@@ -54,7 +54,7 @@ output "network_acls" {
 }
 
 output "network_sgs" {
-  value = aws_security_group.main
+  value = aws_security_group.firewall
 }
 
 output "subnets" {
