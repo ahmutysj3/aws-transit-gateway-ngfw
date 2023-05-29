@@ -1,5 +1,5 @@
 output "cloudwatch_log_group" {
-  value = aws_cloudwatch_log_group.flow_logs[0]
+  value = aws_cloudwatch_log_group.flow_logs
 }
 
 output "cloudwatch_logs" {
