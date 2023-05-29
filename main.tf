@@ -23,18 +23,18 @@ module "network" {
       subnets    = ["mysql_db", "vault", "consul"]
     }
     management = {
-      cidr_block = "10.200.48.0/20"
+      cidr_block = "10.200.48.0/22"
       subnets    = ["monitor", "logging", "admin"]
     }
   }
   cloud_watch_params = {
-    cloud_watch_on     = true
+    cloud_watch_on     = false
     log_retention_days = 30
   }
 
   firewall_params = {
     firewall_name            = "fortigate_001"
-    outside_extra_public_ips = 3
-    inside_extra_private_ips = 3
+    outside_extra_public_ips = 1
+    inside_extra_private_ips = 2
   }
 }
