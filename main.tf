@@ -28,7 +28,7 @@ module "network" {
     }
   }
   cloud_watch_params = {
-    cloud_watch_on     = "true"
+    cloud_watch_on     = true
     log_retention_days = 30
   }
 
