@@ -15,7 +15,6 @@ resource "aws_ec2_transit_gateway" "main" {
   }
 }
 
-
 # Transit Gateway VPC Attachments
 resource "aws_ec2_transit_gateway_vpc_attachment" "spoke" {
   for_each                                        = aws_vpc.spoke
@@ -54,7 +53,6 @@ resource "aws_ec2_transit_gateway_route_table" "main" {
     Name = "${var.network_prefix}_tgw_${each.key}_rt_table"
   }
 }
-
 
 # Transit Gateway Routes
 resource "aws_ec2_transit_gateway_route" "spoke_to_firewall" {
