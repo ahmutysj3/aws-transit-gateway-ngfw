@@ -3,23 +3,6 @@ variable "region_aws" {
   type        = string
 }
 
-variable "spoke_vpc_params" {
-  description = "parameters for spoke VPCs"
-  type = map(object({
-    cidr_block = string
-    subnets    = list(string)
-  }))
-}
-
-variable "firewall_params" {
-  description = "options for fortigate firewall instance"
-  type = object({
-    firewall_name            = string
-    outside_extra_public_ips = number
-    inside_extra_private_ips = number
-  })
-}
-
 variable "firewall_defaults" {
   description = "default subnet and interface values for firewall"
   type = object({
@@ -27,6 +10,12 @@ variable "firewall_defaults" {
     rt_tables     = list(string)
     instance_type = string
   })
+
+  default = {
+    subnets       = ["outside", "inside", "heartbeat", "mgmt", "tgw"]
+    rt_tables     = ["internal", "external", "tgw"]
+    instance_type = "c6i.xlarge"
+  }
 }
 
 variable "transit_gateway_defaults" {
@@ -40,12 +29,14 @@ variable "transit_gateway_defaults" {
     dns_support                     = string
     vpn_ecmp_support                = string
   })
-}
 
-variable "cloud_watch_params" {
-  description = "values for cloudwatch logging"
-  type = object({
-    cloud_watch_on     = bool
-    log_retention_days = number
-  })
+  default = {
+    amazon_side_asn                 = 64512
+    auto_accept_shared_attachments  = "enable"
+    default_route_table_association = "disable"
+    default_route_table_propagation = "disable"
+    multicast_support               = "disable"
+    dns_support                     = "enable"
+    vpn_ecmp_support                = "enable"
+  }
 }
