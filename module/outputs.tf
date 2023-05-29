@@ -1,11 +1,3 @@
-output "cloudwatch_log_group" {
-  value = aws_cloudwatch_log_group.flow_logs
-}
-
-output "cloudwatch_logs" {
-  value = merge(aws_flow_log.cloud_watch_firewall, aws_flow_log.cloud_watch_spoke)
-}
-
 output "firewall" {
   value = aws_instance.fortigate
 }
