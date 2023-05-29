@@ -29,7 +29,7 @@ module "network" {
   }
   cloud_watch_params = {
     cloud_watch_on     = false
-    log_retention_days = 30
+    retention_in_days = 30
   }
 
   firewall_params = {
