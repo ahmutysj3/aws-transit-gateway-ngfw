@@ -1,7 +1,7 @@
 output "cloudwatch_log_group" {
   value = aws_cloudwatch_log_group.flow_logs[0]
 }
-  
+
 output "cloudwatch_logs" {
   value = merge(aws_flow_log.cloud_watch_firewall, aws_flow_log.cloud_watch_spoke)
 }
@@ -15,11 +15,11 @@ output "network_interfaces" {
 }
 
 output "eips" {
-  value = merge(aws_eip.firewall,aws_eip.outside_extra)
+  value = merge(aws_eip.firewall, aws_eip.outside_extra)
 }
 
 output "s3_logs" {
-  value = merge(aws_flow_log.firewall,aws_flow_log.spoke)
+  value = merge(aws_flow_log.firewall, aws_flow_log.spoke)
 }
 
 output "s3_bucket" {
@@ -31,10 +31,10 @@ output "transit_gateway" {
 }
 
 output "transit_gateway_vpc_attachments" {
-  value = merge(aws_ec2_transit_gateway_vpc_attachment.spoke,aws_ec2_transit_gateway_vpc_attachment.firewall)
+  value = merge(aws_ec2_transit_gateway_vpc_attachment.spoke, aws_ec2_transit_gateway_vpc_attachment.firewall)
 }
 
-output "transit_gateway_rt_tables"  {
+output "transit_gateway_rt_tables" {
   value = aws_ec2_transit_gateway_route_table.main
 }
 

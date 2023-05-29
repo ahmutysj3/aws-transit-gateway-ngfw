@@ -61,7 +61,7 @@ variable "firewall_defaults" {
 variable "cloud_watch_params" {
   description = "values for cloudwatch logging"
   type = object({
-    cloud_watch_on     = bool
+    cloud_watch_on    = bool
     retention_in_days = number
   })
 }
