@@ -9,5 +9,6 @@ module "network" {
   fortigate_ami            = data.aws_ami.fortigate
   spoke_vpc_params         = var.spoke_vpc_params
   firewall_params          = var.firewall_params
+  cloud_watch_params       = var.cloud_watch_params
   transit_gateway_defaults = var.transit_gateway_defaults
 }

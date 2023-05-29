@@ -9,7 +9,6 @@ variable "spoke_vpc_params" {
     cidr_block = string
     subnets    = list(string)
     s3_logs    = bool
-    cloudwatch = bool
   }))
 }
 
@@ -32,5 +31,13 @@ variable "transit_gateway_defaults" {
     multicast_support               = string
     dns_support                     = string
     vpn_ecmp_support                = string
+  })
+}
+
+variable "cloud_watch_params" {
+  description = "values for cloudwatch logging"
+  type = object({
+    cloud_watch_on     = bool
+    log_retention_days = number
   })
 }
