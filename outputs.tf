@@ -2,10 +2,6 @@ output "firewall" {
   value = module.network.firewall
 }
 
-locals {
-  firewall = module.network.firewall
-}
-
 output "network_interfaces" {
   value = module.network.network_interfaces
 }
@@ -14,7 +10,7 @@ output "eips" {
   value = module.network.eips
 }
 
-output "s3_logs" {
+/* output "s3_logs" {
   value = module.network.s3_logs
 }
 
@@ -56,4 +52,4 @@ output "subnets" {
 
 output "rt_tables" {
   value = module.network.rt_tables
-}
+} */

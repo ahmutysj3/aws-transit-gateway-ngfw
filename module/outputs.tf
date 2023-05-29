@@ -1,24 +1,38 @@
 output "firewall" {
   value = {
-    id = aws_instance.fortigate.id
-    name = aws_instance.fortigate.tags.Name
-    arn = aws_instance.fortigate.arn
+    id                = aws_instance.fortigate.id
+    name              = aws_instance.fortigate.tags.Name
     availability_zone = aws_instance.fortigate.availability_zone
-    private_ip = aws_instance.fortigate.private_ip
-    primary_vnic = aws_instance.fortigate.primary_network_interface_id
-    
+    private_ip        = aws_instance.fortigate.private_ip
+    primary_vnic      = aws_instance.fortigate.primary_network_interface_id
+    port_map = { for k, v in aws_network_interface.firewall : k => { id = v.id, fw_port = "port${element([for k in v.attachment : k.device_index], 0)}" }
+    }
   }
 }
 
 output "network_interfaces" {
-  value = aws_network_interface.firewall
+  value = { for k, v in aws_network_interface.firewall : k => {
+    id      = v.id,
+    name    = v.tags.Name,
+    subnet  = v.subnet_id,
+    ip      = v.private_ip,
+    fw_port = "port${element([for k in v.attachment : k.device_index], 0)}"
+  } }
 }
 
 output "eips" {
-  value = {
-    firewall_outside = aws_eip.firewall
-    outside_extras = aws_eip.outside_extra
-  }
+  value = merge(
+    { for eipk, eip in module.network.eips.firewall_outside : eipk => {
+      name = eip.tags.Name,
+      id   = eip.id,
+      private_ip = eip.private_ip }
+    },
+    { for eipk, eip in module.network.eips.outside_extra : eipk => {
+      name       = eip.tags.Name,
+      id         = eip.id,
+      private_ip = eip.private_ip
+    }
+  })
 }
 
 output "s3_logs" {
