@@ -1,13 +1,9 @@
-output "cloudwatch_log_group" {
-  value = module.network.cloudwatch_log_group
-}
-
-output "cloudwatch_logs" {
-  value = module.network.cloudwatch_logs
-}
-
 output "firewall" {
   value = module.network.firewall
+}
+
+locals {
+  firewall = module.network.firewall
 }
 
 output "network_interfaces" {

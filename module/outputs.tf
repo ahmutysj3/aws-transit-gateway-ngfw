@@ -1,5 +1,13 @@
 output "firewall" {
-  value = aws_instance.fortigate
+  value = {
+    id = aws_instance.fortigate.id
+    name = aws_instance.fortigate.tags.Name
+    arn = aws_instance.fortigate.arn
+    availability_zone = aws_instance.fortigate.availability_zone
+    private_ip = aws_instance.fortigate.private_ip
+    primary_vnic = aws_instance.fortigate.primary_network_interface_id
+    
+  }
 }
 
 output "network_interfaces" {
@@ -7,7 +15,10 @@ output "network_interfaces" {
 }
 
 output "eips" {
-  value = merge(aws_eip.firewall, aws_eip.outside_extra)
+  value = {
+    firewall_outside = aws_eip.firewall
+    outside_extras = aws_eip.outside_extra
+  }
 }
 
 output "s3_logs" {
@@ -32,7 +43,7 @@ output "transit_gateway_rt_tables" {
 
 output "vpcs" {
   value = {
-    firewall = aws_vpc.firewall.id
+    firewall = aws_vpc.firewall
     spoke    = aws_vpc.spoke
   }
 }
