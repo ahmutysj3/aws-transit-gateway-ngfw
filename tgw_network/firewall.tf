@@ -46,7 +46,7 @@ resource "aws_network_interface" "firewall" {
   }
 }
 
-# Firewall Elastic IPs - Outside Extra IPs
+# Firewall Elastic IPs - Outside Extra IPs (for NAT)
 resource "aws_eip" "outside_extra" {
   for_each                  = local.outside_extra_ips_map
   associate_with_private_ip = each.value
