@@ -1,3 +1,4 @@
+# Firewall Instance
 resource "aws_instance" "fortigate" {
   availability_zone    = var.availability_zone_list[0]
   ami                  = var.fortigate_ami.id
@@ -26,6 +27,7 @@ resource "aws_instance" "fortigate" {
   }
 }
 
+# Firewall Network Interfaces
 locals {
   inside_extra_ips_list = [for k in range(var.firewall_params.inside_extra_private_ips) : cidrhost(aws_subnet.firewall["inside"].cidr_block, -2 - k)]
   outside_extra_ips_map = { for k, v in range(var.firewall_params.outside_extra_public_ips) : "outside_extra_eip_${k}" => cidrhost(aws_subnet.firewall["outside"].cidr_block, -2 - k) }
@@ -44,6 +46,7 @@ resource "aws_network_interface" "firewall" {
   }
 }
 
+# Firewall Elastic IPs - Outside Extra IPs
 resource "aws_eip" "outside_extra" {
   for_each                  = local.outside_extra_ips_map
   associate_with_private_ip = each.value
@@ -57,6 +60,7 @@ resource "aws_eip" "outside_extra" {
   }
 }
 
+# Firewall Elastic IPs - Primary Outside Interface IP
 resource "aws_eip" "firewall" {
   for_each                  = { for index, subnet in var.firewall_defaults.subnets : subnet => index if subnet == "outside" || subnet == "mgmt" }
   associate_with_private_ip = cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)
@@ -70,11 +74,13 @@ resource "aws_eip" "firewall" {
   }
 }
 
+# IAM instance Profile for Firewall API Calls
 resource "aws_iam_instance_profile" "api_call_profile" {
   name = "api_call_profile"
   role = aws_iam_role.api_call_role.name
 }
 
+# IAM Role to Allow API Calls by Firewall
 resource "aws_iam_role" "api_call_role" {
   name = "${var.network_prefix}_api_call_role"
 
@@ -95,6 +101,7 @@ resource "aws_iam_role" "api_call_role" {
 EOF
 }
 
+# IAM Policy to allow Firewall to move IPs for HA
 resource "aws_iam_policy" "api_call_policy" {
   name        = "${var.network_prefix}_api_call_policy"
   path        = "/"
