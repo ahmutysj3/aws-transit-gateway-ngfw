@@ -10,12 +10,6 @@ variable "firewall_defaults" {
     rt_tables     = list(string)
     instance_type = string
   })
-
-  default = {
-    subnets       = ["outside", "inside", "heartbeat", "mgmt", "tgw"]
-    rt_tables     = ["internal", "external", "tgw"]
-    instance_type = "c6i.xlarge"
-  }
 }
 
 variable "transit_gateway_defaults" {
@@ -29,14 +23,4 @@ variable "transit_gateway_defaults" {
     dns_support                     = string
     vpn_ecmp_support                = string
   })
-
-  default = {
-    amazon_side_asn                 = 64512
-    auto_accept_shared_attachments  = "enable"
-    default_route_table_association = "disable"
-    default_route_table_propagation = "disable"
-    multicast_support               = "disable"
-    dns_support                     = "enable"
-    vpn_ecmp_support                = "enable"
-  }
 }
