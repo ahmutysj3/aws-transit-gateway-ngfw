@@ -84,7 +84,11 @@ output "network_acls" {
 }
 
 output "network_sgs" {
-  value = aws_security_group.firewall
+  value = { for secgrpk, secgrp in aws_security_group.firewall : secgrpk => {
+    name = secgrp.tags.Name
+    id   = secgrp.id
+    vpc  = secgrp.vpc_id
+  } }
 }
 
 output "subnets" {
