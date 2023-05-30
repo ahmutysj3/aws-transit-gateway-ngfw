@@ -1,5 +1,5 @@
-module "network" {
-  source                   = "./tgw_network"
+module "tgw_network" {
+  source                   = "./module"
   network_prefix           = "trace"
   supernet_cidr            = "10.200.0.0/16"
   region_aws               = var.region_aws
