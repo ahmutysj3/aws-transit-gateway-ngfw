@@ -22,7 +22,7 @@ output "transit_gateway_vpc_attachments" {
 output "transit_gateway_rt_tables" {
   value = module.network.transit_gateway_rt_tables
 }
-*/
+
 
 
 output "vpcs" {
@@ -33,7 +33,7 @@ output "internet_gateway" {
   value = module.network.internet_gateway
 }
 
-/*
+*/
 
 output "network_acls" {
   value = module.network.network_acls
@@ -49,4 +49,4 @@ output "subnets" {
 
 output "rt_tables" {
   value = module.network.rt_tables
-} */
+}

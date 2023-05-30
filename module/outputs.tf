@@ -72,11 +72,15 @@ output "vpcs" {
 }
 
 output "internet_gateway" {
-  value = aws_internet_gateway.main
+  value = {
+    name = aws_internet_gateway.main.tags.Name
+    id   = aws_internet_gateway.main.id
+  }
 }
 
 output "network_acls" {
-  value = aws_network_acl.main
+  value = { for aclk, acl in aws_network_acl.main : aclk => { name = acl.tags.Name, id = acl.id, vpc = acl.vpc_id, subnet_ids = element([for subnet in acl.subnet_ids : subnet], 0) } }
+
 }
 
 output "network_sgs" {
@@ -84,10 +88,20 @@ output "network_sgs" {
 }
 
 output "subnets" {
-  value = {
-    firewall = aws_subnet.firewall
-    spoke    = aws_subnet.spoke
-  }
+  value = merge(
+    { for subnetk, subnet in aws_subnet.spoke : subnetk => {
+      name = subnet.tags.Name
+      id   = subnet.id
+      az   = subnet.availability_zone
+      type = subnet.tags.type
+    } },
+    { for subnetk, subnet in aws_subnet.firewall : subnetk => {
+      name = subnet.tags.Name
+      id   = subnet.id
+      az   = subnet.availability_zone
+      type = subnet.tags.type
+    } },
+  )
 }
 
 output "rt_tables" {
