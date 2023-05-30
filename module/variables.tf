@@ -50,12 +50,6 @@ variable "firewall_defaults" {
     rt_tables     = list(string)
     instance_type = string
   })
-
-  default = {
-    subnets       = ["outside", "inside", "heartbeat", "mgmt", "tgw"]
-    rt_tables     = ["internal", "external", "tgw"]
-    instance_type = "c6i.xlarge"
-  }
 }
 
 variable "cloud_watch_params" {
