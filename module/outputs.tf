@@ -45,7 +45,12 @@ output "transit_gateway" {
 }
 
 output "transit_gateway_vpc_attachments" {
-  value = { for attachk, attach in merge(aws_ec2_transit_gateway_vpc_attachment.spoke, { firewall = aws_ec2_transit_gateway_vpc_attachment.firewall }) : attachk => { id = attach.id, name = attach.tags.Name, tgw = attach.transit_gateway_id, vpc = attach.vpc_id } }
+  value = { for attachk, attach in merge(aws_ec2_transit_gateway_vpc_attachment.spoke, { firewall = aws_ec2_transit_gateway_vpc_attachment.firewall }) : attachk => {
+    id   = attach.id,
+    name = attach.tags.Name,
+    tgw  = attach.transit_gateway_id,
+    vpc  = attach.vpc_id
+  } }
 }
 
 output "transit_gateway_rt_tables" {
@@ -79,16 +84,19 @@ output "internet_gateway" {
 }
 
 output "network_acls" {
-  value = { for aclk, acl in aws_network_acl.main : aclk => { name = acl.tags.Name, id = acl.id, vpc = acl.vpc_id, subnet_ids = element([for subnet in acl.subnet_ids : subnet], 0) } }
+  value = { for aclk, acl in aws_network_acl.main : aclk => {
+    name = acl.tags.Name,
+    id   = acl.id,
+    vpc  = acl.vpc_id,
+  subnet_ids = element([for subnet in acl.subnet_ids : subnet], 0) } }
 
 }
 
 output "network_sgs" {
-  value = { for secgrpk, secgrp in aws_security_group.firewall : secgrpk => {
-    name = secgrp.tags.Name
-    id   = secgrp.id
-    vpc  = secgrp.vpc_id
-  } }
+  value = {
+    name = aws_security_group.firewall.tags.Name
+    id   = aws_security_group.firewall.id
+  }
 }
 
 output "subnets" {
@@ -109,8 +117,16 @@ output "subnets" {
 }
 
 output "rt_tables" {
-  value = {
-    firewall = aws_route_table.firewall
-    spoke    = aws_route_table.spoke
-  }
+  value = merge(
+    { for routek, route in aws_route_table.spoke : routek => {
+      name = route.tags.Name
+      id   = route.id
+      vpc  = route.vpc_id
+    } },
+    { for routek, route in aws_route_table.firewall : routek => {
+      name = route.tags.Name
+      id   = route.id
+      vpc  = route.vpc_id
+
+  } })
 }
