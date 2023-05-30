@@ -8,7 +8,7 @@ output "network_interfaces" {
 
 output "eips" {
   value = module.network.eips
-} */
+}
 
 
 output "transit_gateway" {
@@ -22,8 +22,9 @@ output "transit_gateway_vpc_attachments" {
 output "transit_gateway_rt_tables" {
   value = module.network.transit_gateway_rt_tables
 }
+*/
 
-/* 
+
 output "vpcs" {
   value = module.network.vpcs
 }
@@ -31,6 +32,8 @@ output "vpcs" {
 output "internet_gateway" {
   value = module.network.internet_gateway
 }
+
+/*
 
 output "network_acls" {
   value = module.network.network_acls

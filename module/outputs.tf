@@ -31,36 +31,44 @@ output "eips" {
       name       = eip.tags.Name,
       id         = eip.id,
       private_ip = eip.private_ip
-    }
+      }
   })
 }
 
 output "transit_gateway" {
   value = {
-    id   = aws_ec2_transit_gateway.main.id
-    name = aws_ec2_transit_gateway.main.tags.Name
-    asn = aws_ec2_transit_gateway.main.amazon_side_asn
+    id          = aws_ec2_transit_gateway.main.id
+    name        = aws_ec2_transit_gateway.main.tags.Name
+    asn         = aws_ec2_transit_gateway.main.amazon_side_asn
     cidr_blocks = aws_ec2_transit_gateway.main.transit_gateway_cidr_blocks
   }
 }
 
 output "transit_gateway_vpc_attachments" {
-  value = {for attachk, attach in merge(aws_ec2_transit_gateway_vpc_attachment.spoke, {firewall = aws_ec2_transit_gateway_vpc_attachment.firewall}) : attachk => {id = attach.id, name = attach.tags.Name, tgw = attach.transit_gateway_id, vpc = attach.vpc_id}}
+  value = { for attachk, attach in merge(aws_ec2_transit_gateway_vpc_attachment.spoke, { firewall = aws_ec2_transit_gateway_vpc_attachment.firewall }) : attachk => { id = attach.id, name = attach.tags.Name, tgw = attach.transit_gateway_id, vpc = attach.vpc_id } }
 }
 
 output "transit_gateway_rt_tables" {
-  value = {for rt_tablek, rt_table in aws_ec2_transit_gateway_route_table.main : rt_tablek => {
-    id = rt_table.id,
+  value = { for rt_tablek, rt_table in aws_ec2_transit_gateway_route_table.main : rt_tablek => {
+    id   = rt_table.id,
     name = rt_table.tags.Name,
-    tgw = rt_table.transit_gateway_id,
-  }}
+    tgw  = rt_table.transit_gateway_id,
+  } }
 }
 
 output "vpcs" {
-  value = {
-    firewall = aws_vpc.firewall
-    spoke    = aws_vpc.spoke
-  }
+  value = merge({
+    firewall = {
+      name       = aws_vpc.firewall.tags.Name
+      id         = aws_vpc.firewall.id
+      cidr_block = aws_vpc.firewall.cidr_block
+    } },
+    { for vpck, vpc in aws_vpc.spoke : vpck => {
+      name       = vpc.tags.Name
+      id         = vpc.id
+      cidr_block = vpc.cidr_block
+      }
+  })
 }
 
 output "internet_gateway" {
