@@ -6,20 +6,7 @@ resource "aws_instance" "fortigate" {
   key_name             = "${var.network_prefix}_linux_vm"
   monitoring           = false
   iam_instance_profile = aws_iam_instance_profile.api_call_profile.name
-/*     user_data = templatefile("./module/firewall_conf.tpl", {
-    fgt_id               = "fortigate_001"
-    type                 = "payg"
-    fgt_data_ip          = {for portk, port in local.firewall_port_map :portk => port.int_ip if portk == "inside"} 
-    fgt_heartbeat_ip     = {for portk, port in local.firewall_port_map :portk => port.int_ip if portk == "heartbeat"} 
-    fgt_mgmt_ip          = {for portk, port in local.firewall_port_map :portk => port.int_ip if portk == "mgmt"} 
-    data_gw              = {for portk, port in local.firewall_port_map :portk => port.gw_ip if portk == "inside"} 
-    spoke1_cidr          = "10.200.0.0/20"
-    spoke2_cidr          = "10.200.16.0/20"
-    mgmt_cidr            = "10.200.48.0/20"
-    password             = "trace-trace"
-    mgmt_gw              = {for portk, port in local.firewall_port_map :portk => port.gw_ip if portk == "mgmt"} 
-    fgt_priority         = "255"
-  })  */
+   
 
   cpu_options {
     core_count       = 2
@@ -48,7 +35,6 @@ locals {
     gw_ip = cidrhost(aws_subnet.firewall[portk].cidr_block,1)
     fw_port = "port${element([for attachk in port.attachment : attachk.device_index], 0) + 1}"
   } }
-
 }
 
 # Firewall Network Interfaces
