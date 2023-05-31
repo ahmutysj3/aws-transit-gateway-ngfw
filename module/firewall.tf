@@ -6,21 +6,20 @@ resource "aws_instance" "fortigate" {
   key_name             = "${var.network_prefix}_linux_vm"
   monitoring           = false
   iam_instance_profile = aws_iam_instance_profile.api_call_profile.name
-  /*   user_data = templatefile("./firewall_conf.tpl", {
-    fgt_id               = "FGT-Active"
+/*     user_data = templatefile("./module/firewall_conf.tpl", {
+    fgt_id               = "fortigate_001"
     type                 = "payg"
-    fgt_data_ip          = # join("/", [element(tolist(aws_network_interface.eni-fgt1-data.private_ips), 0), cidrnetmask("${var.security_vpc_data_subnet_cidr1}")])
-    fgt_heartbeat_ip     = # join("/", [element(tolist(aws_network_interface.eni-fgt1-hb.private_ips), 0), cidrnetmask("${var.security_vpc_heartbeat_subnet_cidr1}")])
-    fgt_mgmt_ip          = # join("/", [element(tolist(aws_network_interface.eni-fgt1-mgmt.private_ips), 0), cidrnetmask("${var.security_vpc_mgmt_subnet_cidr1}")])
-    data_gw              = cidrhost(var.security_vpc_data_subnet_cidr1, 1)
-    spoke1_cidr          = var.spoke_vpc1_cidr
-    spoke2_cidr          = var.spoke_vpc2_cidr
-    mgmt_cidr            = var.mgmt_cidr
-    password             = var.password
-    mgmt_gw              = cidrhost(var.security_vpc_mgmt_subnet_cidr1, 1)
+    fgt_data_ip          = {for portk, port in local.firewall_port_map :portk => port.int_ip if portk == "inside"} 
+    fgt_heartbeat_ip     = {for portk, port in local.firewall_port_map :portk => port.int_ip if portk == "heartbeat"} 
+    fgt_mgmt_ip          = {for portk, port in local.firewall_port_map :portk => port.int_ip if portk == "mgmt"} 
+    data_gw              = {for portk, port in local.firewall_port_map :portk => port.gw_ip if portk == "inside"} 
+    spoke1_cidr          = "10.200.0.0/20"
+    spoke2_cidr          = "10.200.16.0/20"
+    mgmt_cidr            = "10.200.48.0/20"
+    password             = "trace-trace"
+    mgmt_gw              = {for portk, port in local.firewall_port_map :portk => port.gw_ip if portk == "mgmt"} 
     fgt_priority         = "255"
-    fgt-remote-heartbeat = element(tolist(aws_network_interface.eni-fgt2-hb.private_ips), 0)
-  }) */
+  })  */
 
   cpu_options {
     core_count       = 2
@@ -40,6 +39,16 @@ resource "aws_instance" "fortigate" {
   tags = {
     Name = "${var.network_prefix}_${var.firewall_params.firewall_name}"
   }
+}
+
+locals {
+ firewall_port_map = { for portk, port in aws_network_interface.firewall : portk => {
+    id      = port.id,
+    int_ip  = join("/", [port.private_ip, cidrnetmask(aws_subnet.firewall[portk].cidr_block)])
+    gw_ip = cidrhost(aws_subnet.firewall[portk].cidr_block,1)
+    fw_port = "port${element([for attachk in port.attachment : attachk.device_index], 0) + 1}"
+  } }
+
 }
 
 # Firewall Network Interfaces

@@ -79,14 +79,6 @@ set service ALL
 set logtraffic all
 set nat enable
 end
-config system ha
-set group-name fortinet
-set group-id 1
-set password ${password}
-set mode a-p
-set hbdev port2 50
-set session-pickup enable
-set ha-mgmt-status enable
 config ha-mgmt-interface
 edit 1
 set interface port3
@@ -95,8 +87,6 @@ next
 end
 set override disable
 set priority ${fgt_priority}
-set unicast-hb enable
-set unicast-hb-peerip ${fgt-remote-heartbeat}
 end
 config system vdom-exception
 edit 1
