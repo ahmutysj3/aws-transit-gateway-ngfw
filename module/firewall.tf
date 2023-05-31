@@ -6,7 +6,7 @@ resource "aws_instance" "fortigate" {
   key_name             = "${var.network_prefix}_linux_vm"
   monitoring           = false
   iam_instance_profile = aws_iam_instance_profile.api_call_profile.name
-   
+  user_data = data.template_file.init.rendered 
 
   cpu_options {
     core_count       = 2
