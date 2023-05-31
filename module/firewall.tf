@@ -51,8 +51,8 @@ locals {
   }
 
   firewall_conf_inputs_var = {
-    data_gw = "10.200.254.65"
-    fgt_data_ip = "10.200.254.68/255.255.255.192"
+    inside_gw = "10.200.254.65"
+    fgt_inside_ip = "10.200.254.68/255.255.255.192"
     fgt_heartbeat_ip = "10.200.254.132/255.255.255.192"
     fgt_id = "fortigate_001"
     fgt_mgmt_ip = "10.200.254.196/255.255.255.192"
@@ -65,7 +65,6 @@ locals {
     type = "payg"
   }
 }
-
 
 data "template_file" "init" {
   template = "${file("./module/fortigate_conf.tpl")}"

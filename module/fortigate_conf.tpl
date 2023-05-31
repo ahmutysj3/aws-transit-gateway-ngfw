@@ -6,9 +6,9 @@ set hostname ${fgt_id}
 end
 config system interface
 edit port1                            
-set alias DATA
+set alias INSIDE
 set mode static
-set ip ${fgt_data_ip}
+set ip ${fgt_inside_ip}
 set allowaccess ping https ssh
 set mtu-override enable
 set mtu 9001
@@ -33,7 +33,7 @@ end
 config router static
 edit 1
 set device port1
-set gateway ${data_gw}
+set gateway ${inside_gw}
 end
 config firewall address
 edit toSpoke1
