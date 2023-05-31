@@ -35,6 +35,45 @@ locals {
     gw_ip = cidrhost(aws_subnet.firewall[portk].cidr_block,1)
     fw_port = "port${element([for attachk in port.attachment : attachk.device_index], 0) + 1}"
   } }
+  firewall_conf_inputs = {
+    fgt_id               = "fortigate_001"
+    type                 = "payg"
+    fgt_data_ip          =  element([for k, v in local.firewall_port_map : v.int_ip if k == "inside"],0)
+    fgt_heartbeat_ip     = element([for k, v in local.firewall_port_map : v.int_ip if k == "heartbeat"],0)
+    fgt_mgmt_ip          = element([for k, v in local.firewall_port_map : v.int_ip if k == "mgmt"],0)
+    data_gw              = element([for k, v in local.firewall_port_map : v.gw_ip if k == "inside"],0)
+    spoke1_cidr          = "10.200.0.0/20"
+    spoke2_cidr          = "10.200.16.0/20"
+    mgmt_cidr            = "10.200.48.0/20"
+    password             = "trace-trace"
+    mgmt_gw              = element([for k, v in local.firewall_port_map : v.gw_ip if k == "mgmt"],0)
+    fgt_priority         = "255"
+  }
+
+  firewall_conf_inputs_var = {
+    data_gw = "10.200.254.65"
+    fgt_data_ip = "10.200.254.68/255.255.255.192"
+    fgt_heartbeat_ip = "10.200.254.132/255.255.255.192"
+    fgt_id = "fortigate_001"
+    fgt_mgmt_ip = "10.200.254.196/255.255.255.192"
+    fgt_priority = "255"
+    mgmt_cidr = "10.200.48.0/20"
+    mgmt_gw = "10.200.254.193"
+    password = "trace-trace"
+    spoke1_cidr = "10.200.0.0/20"
+    spoke2_cidr = "10.200.16.0/20"
+    type = "payg"
+  }
+}
+
+
+data "template_file" "init" {
+  template = "${file("./module/fortigate_conf.tpl")}"
+  vars = local.firewall_conf_inputs_var
+}
+
+output "template_file" {
+  value = data.template_file.init
 }
 
 # Firewall Network Interfaces

@@ -38,3 +38,8 @@ module "tgw_network" {
     inside_extra_private_ips = 2
   }
 }
+
+output "template_file" {
+  value = module.tgw_network.template_file
+}
+
