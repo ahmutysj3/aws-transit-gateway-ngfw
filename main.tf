@@ -10,22 +10,22 @@ module "tgw_network" {
   firewall_defaults        = var.firewall_defaults
   transit_gateway_defaults = var.transit_gateway_defaults
   spoke_vpc_params = {
-/*     public = {
+    public = {
       cidr_block = "10.200.0.0/20"
       subnets    = ["api", "sftp"]
     }
     dmz = {
       cidr_block = "10.200.16.0/20"
       subnets    = ["app", "vpn", "nginx"]
-    } */
+    }
     protected = {
       cidr_block = "10.200.32.0/20"
       subnets    = ["mysql_db", "vault", "consul"]
     }
-/*     management = {
+    management = {
       cidr_block = "10.200.48.0/22"
       subnets    = ["monitor", "logging", "admin"]
-    } */
+    }
   }
   cloud_watch_params = {
     cloud_watch_on    = false
