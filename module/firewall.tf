@@ -6,6 +6,21 @@ resource "aws_instance" "fortigate" {
   key_name             = "${var.network_prefix}_linux_vm"
   monitoring           = false
   iam_instance_profile = aws_iam_instance_profile.api_call_profile.name
+  /*   user_data = templatefile("./firewall_conf.tpl", {
+    fgt_id               = "FGT-Active"
+    type                 = "payg"
+    fgt_data_ip          = # join("/", [element(tolist(aws_network_interface.eni-fgt1-data.private_ips), 0), cidrnetmask("${var.security_vpc_data_subnet_cidr1}")])
+    fgt_heartbeat_ip     = # join("/", [element(tolist(aws_network_interface.eni-fgt1-hb.private_ips), 0), cidrnetmask("${var.security_vpc_heartbeat_subnet_cidr1}")])
+    fgt_mgmt_ip          = # join("/", [element(tolist(aws_network_interface.eni-fgt1-mgmt.private_ips), 0), cidrnetmask("${var.security_vpc_mgmt_subnet_cidr1}")])
+    data_gw              = cidrhost(var.security_vpc_data_subnet_cidr1, 1)
+    spoke1_cidr          = var.spoke_vpc1_cidr
+    spoke2_cidr          = var.spoke_vpc2_cidr
+    mgmt_cidr            = var.mgmt_cidr
+    password             = var.password
+    mgmt_gw              = cidrhost(var.security_vpc_mgmt_subnet_cidr1, 1)
+    fgt_priority         = "255"
+    fgt-remote-heartbeat = element(tolist(aws_network_interface.eni-fgt2-hb.private_ips), 0)
+  }) */
 
   cpu_options {
     core_count       = 2
@@ -134,3 +149,5 @@ resource "aws_iam_policy_attachment" "api_call_attach" {
   roles      = [aws_iam_role.api_call_role.name]
   policy_arn = aws_iam_policy.api_call_policy.arn
 }
+
+
