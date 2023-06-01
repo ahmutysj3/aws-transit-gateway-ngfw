@@ -37,13 +37,15 @@ locals {
     fgt_id           = "${var.firewall_params.firewall_name}"
     type             = "payg"
     fgt_inside_ip    = element([for portk, port in local.firewall_port_map : port.int_ip if portk == "inside"], 0)
+    fgt_outside_ip   = element([for portk, port in local.firewall_port_map : port.int_ip if portk == "outside"], 0)
     fgt_heartbeat_ip = element([for portk, port in local.firewall_port_map : port.int_ip if portk == "heartbeat"], 0)
     fgt_mgmt_ip      = element([for portk, port in local.firewall_port_map : port.int_ip if portk == "mgmt"], 0)
     inside_gw        = element([for portk, port in local.firewall_port_map : port.gw_ip if portk == "inside"], 0)
-    spoke1_cidr      = element([ for vpck, vpc in aws_vpc.spoke : vpc.cidr_block if vpck == "public" ], 0 )
-    spoke2_cidr      = element([ for vpck, vpc in aws_vpc.spoke : vpc.cidr_block if vpck == "dmz" ], 0 )
-    spoke3_cidr      = element([ for vpck, vpc in aws_vpc.spoke : vpc.cidr_block if vpck == "protected" ], 0 )
-    mgmt_cidr        = element([ for vpck, vpc in aws_vpc.spoke : vpc.cidr_block if vpck == "management" ], 0 )
+    outside_gw       = element([for portk, port in local.firewall_port_map : port.gw_ip if portk == "outside"], 0)
+    spoke1_cidr      = element([for vpck, vpc in aws_vpc.spoke : vpc.cidr_block if vpck == "public"], 0)
+    spoke2_cidr      = element([for vpck, vpc in aws_vpc.spoke : vpc.cidr_block if vpck == "dmz"], 0)
+    spoke3_cidr      = element([for vpck, vpc in aws_vpc.spoke : vpc.cidr_block if vpck == "protected"], 0)
+    mgmt_cidr        = element([for vpck, vpc in aws_vpc.spoke : vpc.cidr_block if vpck == "management"], 0)
     password         = "${var.network_prefix}-${var.network_prefix}"
     mgmt_gw          = element([for portk, port in local.firewall_port_map : port.gw_ip if portk == "mgmt"], 0)
     fgt_priority     = "255"

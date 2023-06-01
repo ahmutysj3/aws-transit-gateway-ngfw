@@ -6,14 +6,22 @@ set hostname ${fgt_id}
 end
 config system interface
 edit port1                            
-set alias INSIDE
+set alias OUTSIDE
 set mode static
-set ip ${fgt_inside_ip}
+set ip ${fgt_outside_ip}
 set allowaccess ping https ssh
 set mtu-override enable
 set mtu 9001
 next
 edit port2
+set alias INSIDE
+set mode static
+set ip ${fgt_inside_ip}
+set allowaccess ping 
+set mtu-override enable
+set mtu 9001
+next
+edit port3
 set alias HEARTBEAT
 set mode static
 set ip ${fgt_heartbeat_ip}
@@ -21,7 +29,7 @@ set allowaccess ping
 set mtu-override enable
 set mtu 9001
 next
-edit port3
+edit port4
 set alias MGMT
 set mode static
 set ip ${fgt_mgmt_ip}
@@ -33,8 +41,13 @@ end
 config router static
 edit 1
 set device port1
+set gateway ${outside_gw}
+end
+edit 2
+set device port2
 set gateway ${inside_gw}
 end
+next
 config firewall address
 edit toSpoke1
 set subnet ${spoke1_cidr}
@@ -42,13 +55,16 @@ next
 edit toSpoke2
 set subnet ${spoke2_cidr}
 next
+edit toSpoke3
+set subnet ${spoke3_cidr}
+next
 edit toMgmt
 set subnet ${mgmt_cidr}
 next
 end
 config firewall addrgrp
 edit to-WEST
-set member toSpoke1 toSpoke2 toMgmt
+set member toSpoke1 toSpoke2 toSpoke3 toMgmt
 end
 config firewall policy
 edit 1
@@ -85,7 +101,7 @@ set session-pickup enable
 set ha-mgmt-status enable
 config ha-mgmt-interface
 edit 1
-set interface port3
+set interface port4
 set gateway ${mgmt_gw}
 next
 end
