@@ -5,7 +5,7 @@ output "firewall" {
     availability_zone = aws_instance.fortigate.availability_zone
     private_ip        = aws_instance.fortigate.private_ip
     primary_vnic      = aws_instance.fortigate.primary_network_interface_id
-    port_map      = { for portk, port in aws_network_interface.firewall : "port${element([for portk in port.attachment : portk.device_index], 0) + 1}" => portk }
+    port_map          = { for portk, port in aws_network_interface.firewall : "port${element([for portk in port.attachment : portk.device_index], 0) + 1}" => portk }
   }
 }
 
