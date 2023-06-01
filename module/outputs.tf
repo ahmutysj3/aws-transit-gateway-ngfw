@@ -1,24 +1,3 @@
-output "firewall" {
-  value = {
-    id                = aws_instance.fortigate.id
-    name              = aws_instance.fortigate.tags.Name
-    availability_zone = aws_instance.fortigate.availability_zone
-    private_ip        = aws_instance.fortigate.private_ip
-    primary_vnic      = aws_instance.fortigate.primary_network_interface_id
-    port_map          = { for portk, port in aws_network_interface.firewall : "port${element([for portk in port.attachment : portk.device_index], 0) + 1}" => portk }
-  }
-}
-
-output "network_interfaces" {
-  value = { for portk, port in aws_network_interface.firewall : portk => {
-    id      = port.id,
-    name    = port.tags.Name,
-    subnet  = port.subnet_id,
-    ip      = port.private_ip,
-    fw_port = "port${element([for attachk in port.attachment : attachk.device_index], 0) + 1}"
-  } }
-}
-
 output "eips" {
   value = merge(
     { for eipk, eip in aws_eip.firewall : eipk => {
@@ -43,23 +22,6 @@ output "transit_gateway" {
   }
 }
 
-output "transit_gateway_vpc_attachments" {
-  value = { for attachk, attach in merge(aws_ec2_transit_gateway_vpc_attachment.spoke, { firewall = aws_ec2_transit_gateway_vpc_attachment.firewall }) : attachk => {
-    id   = attach.id,
-    name = attach.tags.Name,
-    tgw  = attach.transit_gateway_id,
-    vpc  = attach.vpc_id
-  } }
-}
-
-output "transit_gateway_rt_tables" {
-  value = { for rt_tablek, rt_table in aws_ec2_transit_gateway_route_table.main : rt_tablek => {
-    id   = rt_table.id,
-    name = rt_table.tags.Name,
-    tgw  = rt_table.transit_gateway_id,
-  } }
-}
-
 output "vpcs" {
   value = merge({
     firewall = {
@@ -75,29 +37,6 @@ output "vpcs" {
       type       = vpc.tags.type
       }
   })
-}
-
-output "internet_gateway" {
-  value = {
-    name = aws_internet_gateway.main.tags.Name
-    id   = aws_internet_gateway.main.id
-  }
-}
-
-output "network_acls" {
-  value = { for aclk, acl in aws_network_acl.main : aclk => {
-    name = acl.tags.Name,
-    id   = acl.id,
-    vpc  = acl.vpc_id,
-  subnet_ids = element([for subnet in acl.subnet_ids : subnet], 0) } }
-
-}
-
-output "network_sgs" {
-  value = {
-    name = aws_security_group.firewall.tags.Name
-    id   = aws_security_group.firewall.id
-  }
 }
 
 output "subnets" {
@@ -118,19 +57,4 @@ output "subnets" {
 
     } },
   )
-}
-
-output "rt_tables" {
-  value = merge(
-    { for routek, route in aws_route_table.spoke : routek => {
-      name = route.tags.Name
-      id   = route.id
-      vpc  = route.vpc_id
-    } },
-    { for routek, route in aws_route_table.firewall : routek => {
-      name = route.tags.Name
-      id   = route.id
-      vpc  = route.vpc_id
-
-  } })
 }

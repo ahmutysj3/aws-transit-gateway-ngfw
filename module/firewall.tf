@@ -54,21 +54,6 @@ locals {
     net_name         = "${var.network_prefix}"
     outside_gw_netmask = "255.255.255.192"
   }
-
-  firewall_conf_inputs_var = {
-    inside_gw        = "10.200.254.65"
-    fgt_inside_ip    = "10.200.254.68/255.255.255.192"
-    fgt_heartbeat_ip = "10.200.254.132/255.255.255.192"
-    fgt_id           = "fortigate_001"
-    fgt_mgmt_ip      = "10.200.254.196/255.255.255.192"
-    fgt_priority     = "255"
-    mgmt_cidr        = "10.200.48.0/20"
-    mgmt_gw          = "10.200.254.193"
-    password         = "trace-trace"
-    spoke1_cidr      = "10.200.0.0/20"
-    spoke2_cidr      = "10.200.16.0/20"
-    type             = "payg"
-  }
 }
 
 data "template_file" "init" {
@@ -88,6 +73,7 @@ locals {
 
 resource "aws_network_interface" "firewall" {
   for_each                = { for index, subnet in var.firewall_defaults.subnets : subnet => index if subnet != "tgw" }
+  description = "fw_${each.key}_interface"
   subnet_id               = aws_subnet.firewall[each.key].id
   private_ip_list_enabled = true
   private_ip_list         = each.key == "mgmt" || each.key == "heartbeat" ? [cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)] : each.key == "outside" ? concat([cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)], values(local.outside_extra_ips_map)) : concat([cidrhost(aws_subnet.firewall[each.key].cidr_block, 4)], local.inside_extra_ips_list)
