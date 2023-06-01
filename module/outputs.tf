@@ -67,11 +67,13 @@ output "vpcs" {
       name       = aws_vpc.firewall.tags.Name
       id         = aws_vpc.firewall.id
       cidr_block = aws_vpc.firewall.cidr_block
+      type       = aws_vpc.firewall.tags.type
     } },
     { for vpck, vpc in aws_vpc.spoke : vpck => {
       name       = vpc.tags.Name
       id         = vpc.id
       cidr_block = vpc.cidr_block
+      type       = vpc.tags.type
       }
   })
 }

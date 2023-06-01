@@ -6,7 +6,7 @@ resource "aws_instance" "fortigate" {
   key_name             = "${var.network_prefix}_linux_vm"
   monitoring           = false
   iam_instance_profile = aws_iam_instance_profile.api_call_profile.name
-  user_data = data.template_file.init.rendered 
+  user_data            = data.template_file.init.rendered
 
   cpu_options {
     core_count       = 2
@@ -29,46 +29,45 @@ resource "aws_instance" "fortigate" {
 }
 
 locals {
- firewall_port_map = { for portk, port in aws_network_interface.firewall : portk => {
-    id      = port.id,
-    int_ip  = join("/", [port.private_ip, cidrnetmask(aws_subnet.firewall[portk].cidr_block)])
-    gw_ip = cidrhost(aws_subnet.firewall[portk].cidr_block,1)
-    fw_port = "port${element([for attachk in port.attachment : attachk.device_index], 0) + 1}"
+  firewall_port_map = { for portk, port in aws_network_interface.firewall : portk => {
+    int_ip = join("/", [port.private_ip, cidrnetmask(aws_subnet.firewall[portk].cidr_block)])
+    gw_ip  = cidrhost(aws_subnet.firewall[portk].cidr_block, 1)
   } }
   firewall_conf_inputs = {
-    fgt_id               = "fortigate_001"
-    type                 = "payg"
-    fgt_data_ip          =  element([for k, v in local.firewall_port_map : v.int_ip if k == "inside"],0)
-    fgt_heartbeat_ip     = element([for k, v in local.firewall_port_map : v.int_ip if k == "heartbeat"],0)
-    fgt_mgmt_ip          = element([for k, v in local.firewall_port_map : v.int_ip if k == "mgmt"],0)
-    data_gw              = element([for k, v in local.firewall_port_map : v.gw_ip if k == "inside"],0)
-    spoke1_cidr          = "10.200.0.0/20"
-    spoke2_cidr          = "10.200.16.0/20"
-    mgmt_cidr            = "10.200.48.0/20"
-    password             = "trace-trace"
-    mgmt_gw              = element([for k, v in local.firewall_port_map : v.gw_ip if k == "mgmt"],0)
-    fgt_priority         = "255"
+    fgt_id           = "${var.firewall_params.firewall_name}"
+    type             = "payg"
+    fgt_inside_ip    = element([for portk, port in local.firewall_port_map : port.int_ip if portk == "inside"], 0)
+    fgt_heartbeat_ip = element([for portk, port in local.firewall_port_map : port.int_ip if portk == "heartbeat"], 0)
+    fgt_mgmt_ip      = element([for portk, port in local.firewall_port_map : port.int_ip if portk == "mgmt"], 0)
+    inside_gw        = element([for portk, port in local.firewall_port_map : port.gw_ip if portk == "inside"], 0)
+    spoke1_cidr      = element([for vpck, vpc in aws_vpc.spoke : vpc.cidr_block if vpc == "public"], 0)
+    spoke2_cidr      = element([for vpck, vpc in aws_vpc.spoke : vpc.cidr_block if vpc == "dmz"], 0)
+    spoke3_cidr      = element([for vpck, vpc in aws_vpc.spoke : vpc.cidr_block if vpc == "protected"], 0)
+    mgmt_cidr        = element([for vpck, vpc in aws_vpc.spoke : vpc.cidr_block if vpc == "mgmt"], 0)
+    password         = "${var.network_prefix}-${var.network_prefix}"
+    mgmt_gw          = element([for portk, port in local.firewall_port_map : port.gw_ip if portk == "mgmt"], 0)
+    fgt_priority     = "255"
   }
 
   firewall_conf_inputs_var = {
-    inside_gw = "10.200.254.65"
-    fgt_inside_ip = "10.200.254.68/255.255.255.192"
+    inside_gw        = "10.200.254.65"
+    fgt_inside_ip    = "10.200.254.68/255.255.255.192"
     fgt_heartbeat_ip = "10.200.254.132/255.255.255.192"
-    fgt_id = "fortigate_001"
-    fgt_mgmt_ip = "10.200.254.196/255.255.255.192"
-    fgt_priority = "255"
-    mgmt_cidr = "10.200.48.0/20"
-    mgmt_gw = "10.200.254.193"
-    password = "trace-trace"
-    spoke1_cidr = "10.200.0.0/20"
-    spoke2_cidr = "10.200.16.0/20"
-    type = "payg"
+    fgt_id           = "fortigate_001"
+    fgt_mgmt_ip      = "10.200.254.196/255.255.255.192"
+    fgt_priority     = "255"
+    mgmt_cidr        = "10.200.48.0/20"
+    mgmt_gw          = "10.200.254.193"
+    password         = "trace-trace"
+    spoke1_cidr      = "10.200.0.0/20"
+    spoke2_cidr      = "10.200.16.0/20"
+    type             = "payg"
   }
 }
 
 data "template_file" "init" {
-  template = "${file("./module/fortigate_conf.tpl")}"
-  vars = local.firewall_conf_inputs_var
+  template = file("./module/fortigate_conf.tpl")
+  vars     = local.firewall_conf_inputs
 }
 
 output "template_file" {

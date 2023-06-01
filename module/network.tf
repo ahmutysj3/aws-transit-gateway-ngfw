@@ -13,6 +13,7 @@ resource "aws_vpc" "firewall" {
 
   tags = {
     Name = "${var.network_prefix}_firewall_vpc"
+    type = "firewall"
   }
 }
 
@@ -110,6 +111,7 @@ resource "aws_vpc" "spoke" {
   cidr_block = each.value.cidr_block
   tags = {
     Name = "${var.network_prefix}_${each.key}_vpc"
+    type = "spoke"
   }
 }
 
