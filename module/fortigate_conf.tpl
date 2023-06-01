@@ -9,7 +9,7 @@ edit port1
 set alias OUTSIDE
 set mode static
 set ip ${fgt_outside_ip}
-set allowaccess ping https ssh
+set allowaccess ping https ssh fgfm
 set mtu-override enable
 set mtu 9001
 next
@@ -42,10 +42,12 @@ config router static
 edit 1
 set device port1
 set gateway ${outside_gw}
-end
+next
 edit 2
 set device port2
 set gateway ${inside_gw}
+set dst {supernet}
+next
 end
 next
 config firewall address
@@ -69,8 +71,8 @@ end
 config firewall policy
 edit 1
 set name East-West
-set srcintf port1
-set dstintf port1
+set srcintf port2
+set dstintf port2
 set srcaddr all
 set dstaddr to-WEST
 set action accept
@@ -80,7 +82,7 @@ set logtraffic all
 next
 edit 2
 set name South-North
-set srcintf port1
+set srcintf port2
 set dstintf port1
 set srcaddr all
 set dstaddr to-WEST
@@ -90,15 +92,18 @@ set schedule always
 set service ALL
 set logtraffic all
 set nat enable
+edit 3
+set name Mgmt-Access
+set srcintf port1
+set dstintf port1
+set srcaddr all
+set dstaddr all
+set action accept
+set schedule always
+set service ALL
+set logtraffic all
+next
 end
-config system ha
-set group-name fortinet
-set group-id 1
-set password ${password}
-set mode a-p
-set hbdev port2 50
-set session-pickup enable
-set ha-mgmt-status enable
 config ha-mgmt-interface
 edit 1
 set interface port4
