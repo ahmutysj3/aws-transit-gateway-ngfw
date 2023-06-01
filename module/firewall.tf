@@ -6,7 +6,7 @@ resource "aws_instance" "fortigate" {
   key_name             = "${var.network_prefix}_linux_vm"
   monitoring           = false
   iam_instance_profile = aws_iam_instance_profile.api_call_profile.name
-  #user_data            = data.template_file.init.rendered
+  user_data            = data.template_file.init.rendered
 
   cpu_options {
     core_count       = 2
@@ -51,6 +51,8 @@ locals {
     heartbeat_gw     = element([for portk, port in local.firewall_port_map : port.gw_ip if portk == "heartbeat"], 0)
     fgt_priority     = "255"
     supernet         = "10.200.0.0 255.255.0.0"
+    net_name         = "${var.network_prefix}"
+    outside_gw_netmask = "255.255.255.192"
   }
 
   firewall_conf_inputs_var = {

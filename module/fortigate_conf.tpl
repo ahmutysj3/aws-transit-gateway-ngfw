@@ -1,38 +1,118 @@
 config system global
     set hostname ${fgt_id}
+    set alias ${fgt_id}
 end
 config system interface
     edit port1                            
         set alias OUTSIDE
-        set mode static
-        set ip ${fgt_outside_ip}
+        set vdom "root"
+        set mode dhcp
+        set type physical
         set allowaccess ping https ssh fgfm
+        set snmp-index 1
         set mtu-override enable
         set mtu 9001
     next
-    edit port2
+    edit port2                            
         set alias INSIDE
-        set mode static
-        set ip ${fgt_inside_ip}
-        set allowaccess ping 
+        set vdom "root"
+        set mode dhcp
+        set type physical
+        set defaultgw disable
+        set allowaccess ping
+        set snmp-index 2
         set mtu-override enable
         set mtu 9001
     next
-    edit port3
+    edit port3                           
         set alias HEARTBEAT
-        set mode static
-        set ip ${fgt_heartbeat_ip}
-        set allowaccess ping 
+        set vdom "root"
+        set mode dhcp
+        set type physical
+        set defaultgw disable
+        set allowaccess ping
+        set snmp-index 3
         set mtu-override enable
         set mtu 9001
     next
-    edit port4
-        set alias MGMT
-        set mode static
-        set ip ${fgt_mgmt_ip}
-        set allowaccess ping https ssh
+    edit port4                           
+        set alias MANAGEMENT
+        set vdom "root"
+        set mode dhcp
+        set type physical
+        set defaultgw disable
+        set allowaccess ping https ssh fgfm
+        set snmp-index 4
         set mtu-override enable
         set mtu 9001
+    next
+    edit "naf.root"
+        set vdom "root"
+        set type tunnel
+        set src-check disable
+        set snmp-index 5
+    next
+    edit "l2t.root"
+        set vdom "root"
+        set type tunnel
+        set snmp-index 6
+    next
+    edit "ssl.root"
+        set vdom "root"
+        set type tunnel
+        set alias "SSL VPN interface"
+        set snmp-index 7
+    next
+    edit "fortilink"
+        set vdom "root"
+        set fortilink enable
+        set ip ${outside_gw} ${outside_gw_netmask}
+        set allowaccess ping fabric
+        set type aggregate
+        set lldp-reception enable
+        set lldp-transmission enable
+        set snmp-index 8
+    next
+end
+config system accprofile
+    edit "${net_name}_terraform_admin"
+        set secfabgrp read-write
+        set ftviewgrp read-write
+        set authgrp read-write
+        set sysgrp read-write
+        set netgrp read-write
+        set loggrp read-write
+        set fwgrp read-write
+        set vpngrp read-write
+        set utmgrp read-write
+        set wanoptgrp read-write
+        set wifi read-write
+    next
+end
+config firewall internet-service-name
+    edit "Amazon-AWS"
+        set internet-service-id 393320
+    next
+    edit "Amazon-AWS.Route53"
+        set internet-service-id 393473
+    next
+    edit "Amazon-AWS.S3"
+        set internet-service-id 393474
+    next
+    edit "Amazon-AWS.EC2"
+        set internet-service-id 393477
+    next
+    edit "Amazon-AWS.API.Gateway"
+        set internet-service-id 393478
+    next
+    edit "Fortinet-Web"
+        set internet-service-id 1245185
+    next
+    edit "Fortinet-FortiGuard"
+        set internet-service-id 1245324
+    next
+    edit "Fortinet-FortiCloud"
+        set internet-service-id 1245326
     next
 end
 config router static
@@ -43,7 +123,7 @@ config router static
     edit 2
         set device port2
         set gateway ${inside_gw}
-        set dst {supernet}
+        set dst ${supernet}
     next
 end
 config firewall address
@@ -58,6 +138,9 @@ config firewall address
     next
     edit toMgmt
         set subnet ${mgmt_cidr}
+    next
+    edit Supernet
+        set subnet ${supernet}
     next
 end
     config firewall addrgrp
@@ -80,41 +163,12 @@ config firewall policy
         set name South-North
         set srcintf port2
         set dstintf port1
-        set srcaddr all
-        set dstaddr to-WEST
-        set dstaddr-negate enable
-        set action accept
-        set schedule always
-        set service ALL
-        set logtraffic all
-        set nat enable
-    next
-    edit 3
-        set name Mgmt-Access
-        set srcintf port1
-        set dstintf port1
-        set srcaddr all
+        set srcaddr Supernet
         set dstaddr all
         set action accept
         set schedule always
         set service ALL
         set logtraffic all
-    next
-end
-config ha-mgmt-interface
-    edit 1
-        set interface port4
-        set gateway ${mgmt_gw}
-    next
-end
-config system vdom-exception
-    edit 1
-        set object system.interface
-    next
-    edit 2
-        set object router.static
-    next
-    edit 3
-        set object firewall.vip
+        set nat enable
     next
 end
