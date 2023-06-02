@@ -61,10 +61,6 @@ data "template_file" "init" {
   vars     = local.firewall_conf_inputs
 }
 
-output "template_file" {
-  value = data.template_file.init
-}
-
 # Firewall Network Interfaces
 locals {
   inside_extra_ips_list = [for k in range(var.firewall_params.inside_extra_private_ips) : cidrhost(aws_subnet.firewall["inside"].cidr_block, -2 - k)]
