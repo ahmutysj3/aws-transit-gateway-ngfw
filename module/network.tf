@@ -97,6 +97,12 @@ resource "aws_route" "tgw_spoke" {
   transit_gateway_id     = aws_ec2_transit_gateway.main.id
 }
 
+resource "aws_route" "tgw_to_fw_inside" {
+  route_table_id         = aws_route_table.firewall["tgw"].id
+  destination_cidr_block = "0.0.0.0/0"
+  network_interface_id   = aws_network_interface.firewall["inside"].id
+}
+
 resource "aws_route" "firewall" {
   for_each               = toset(["internal", "external"])
   route_table_id         = aws_route_table.firewall[each.key].id
