@@ -1,12 +1,6 @@
 # AWS Transit Gateway VPC Network
 
-- AWS Network Environment using Transit Gateway and FortiGate NGFW
-
-## Overview
-
-- This terraform plan builds a network in **AWS**.
-
-- Use of this module will require setting up **Terraform AWS Provider & AWS-CLI** (along w/credentials setup etc) before running terraform init
+- This terraform plan builds an AWS Network Environment using Transit Gateway and FortiGate NGFW
 
 ## Network Structure
 
@@ -18,11 +12,10 @@
 - `public` Virtual Private Cloud
 - `dmz` Virtual Private Cloud
 
-
 ## Instructions
 
-- define region, transit gateway options, firewall options and vpc names for network in the *terraform.tfvars* file
-- define supernet and network prefix name in *main.tf*
+- define region, supernet cidr, network prefix, transit gateway options, firewall options and vpc names for network in the terraform.tfvars file
+- Use of this module will require setting up **Terraform AWS Provider & AWS-CLI** (along w/credentials setup etc) before running terraform init
 
 ## Resources
 
