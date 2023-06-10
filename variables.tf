@@ -24,3 +24,38 @@ variable "transit_gateway_defaults" {
     vpn_ecmp_support                = string
   })
 }
+
+variable "network_prefix" {
+  description = "prefix to prepend on all resource names within the network"
+  type        = string
+}
+
+variable "supernet_cidr" {
+  description = "cidr block for entire datacenter, must be /16"
+  type        = string
+}
+
+variable "spoke_vpc_params" {
+  description = "parameters for spoke VPCs"
+  type = map(object({
+    cidr_block = string
+    subnets    = list(string)
+  }))
+}
+
+variable "firewall_params" {
+  description = "options for fortigate firewall instance"
+  type = object({
+    firewall_name            = string
+    outside_extra_public_ips = number
+    inside_extra_private_ips = number
+  })
+}
+
+variable "cloud_watch_params" {
+  description = "values for cloudwatch logging"
+  type = object({
+    cloud_watch_on    = bool
+    retention_in_days = number
+  })
+}
