@@ -1,28 +1,18 @@
-# AWS Transit Gateway VPC Network
+<!-- BEGIN_TF_DOCS -->
+## Requirements
 
-- AWS Network Environment using Transit Gateway and FortiGate NGFW
+No requirements.
 
-## Overview
+## Providers
 
-- This terraform plan builds a network in **AWS**.
+| Name | Version |
+|------|---------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | n/a |
+| <a name="provider_template"></a> [template](#provider\_template) | n/a |
 
-- Use of this module will require setting up **Terraform AWS Provider & AWS-CLI** (along w/credentials setup etc) before running terraform init
+## Modules
 
-## Network Structure
-
-### Hub-Spoke Design utilizing Transit Gateway
-
-- `firewall` Virtual Private Cloud
-- `protected` Virtual Private Cloud
-- `management` Virtual Private Cloud
-- `public` Virtual Private Cloud
-- `dmz` Virtual Private Cloud
-
-
-## Instructions
-
-- define region, transit gateway options, firewall options and vpc names for network in the *terraform.tfvars* file
-- define supernet and network prefix name in *main.tf*
+No modules.
 
 ## Resources
 
@@ -78,9 +68,13 @@
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_availability_zone_list"></a> [availability\_zone\_list](#input\_availability\_zone\_list) | n/a | `any` | n/a | yes |
 | <a name="input_cloud_watch_params"></a> [cloud\_watch\_params](#input\_cloud\_watch\_params) | values for cloudwatch logging | <pre>object({<br>    cloud_watch_on    = bool<br>    retention_in_days = number<br>  })</pre> | n/a | yes |
 | <a name="input_firewall_defaults"></a> [firewall\_defaults](#input\_firewall\_defaults) | default subnet and interface values for firewall | <pre>object({<br>    subnets       = list(string)<br>    rt_tables     = list(string)<br>    instance_type = string<br>  })</pre> | n/a | yes |
 | <a name="input_firewall_params"></a> [firewall\_params](#input\_firewall\_params) | options for fortigate firewall instance | <pre>object({<br>    firewall_name            = string<br>    outside_extra_public_ips = number<br>    inside_extra_private_ips = number<br>  })</pre> | n/a | yes |
+| <a name="input_fortigate_ami"></a> [fortigate\_ami](#input\_fortigate\_ami) | n/a | `any` | n/a | yes |
+| <a name="input_iam_policy_assume_role"></a> [iam\_policy\_assume\_role](#input\_iam\_policy\_assume\_role) | n/a | `any` | n/a | yes |
+| <a name="input_iam_policy_flow_logs"></a> [iam\_policy\_flow\_logs](#input\_iam\_policy\_flow\_logs) | n/a | `any` | n/a | yes |
 | <a name="input_network_prefix"></a> [network\_prefix](#input\_network\_prefix) | prefix to prepend on all resource names within the network | `string` | n/a | yes |
 | <a name="input_region_aws"></a> [region\_aws](#input\_region\_aws) | AWS Region | `string` | n/a | yes |
 | <a name="input_spoke_vpc_params"></a> [spoke\_vpc\_params](#input\_spoke\_vpc\_params) | parameters for spoke VPCs | <pre>map(object({<br>    cidr_block = string<br>    subnets    = list(string)<br>  }))</pre> | n/a | yes |
